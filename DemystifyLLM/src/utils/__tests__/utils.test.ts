@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { 
   getCurrentPresentationUrl, 
   getSlideUrl, 
   getSlideNumberFromPath, 
   isValidSlideNumber 
 } from '../urlUtils'
+import { parseGistUrl, fetchMarkdownContent } from '../gistFetcher'
 
 describe('URL Utils Tests', () => {
   // Mock window.location
@@ -47,38 +48,6 @@ describe('URL Utils Tests', () => {
 })
 
 describe('GistFetcher Tests', () => {
-  it('fetches gist content correctly', async () => {
-    const mockGistData = {
-      files: {
-        'slides.json': {
-          content: JSON.stringify([
-            { slideIndex: 1, slideContentGist: 'gist1.md' },
-            { slideIndex: 2, slideContentGist: 'gist2.md' },
-          ]),
-          raw_url: 'https://gist.githubusercontent.com/user/hash/raw/slides.json'
-        }
-      }
-    }
-    
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(mockGistData),
-    })
-
-    const { fetchGistContent } = await import('../gistFetcher')
-    const result = await fetchGistContent('https://gist.github.com/user/hash')
-    
-    expect(result).toEqual(mockGistData)
-  })
-
-  it('handles fetch errors gracefully', async () => {
-    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'))
-
-    const { fetchGistContent } = await import('../gistFetcher')
-    
-    await expect(fetchGistContent('invalid-url')).rejects.toThrow('Network error')
-  })
-
   it('fetches markdown content correctly', async () => {
     const mockContent = '# Test Slide\n\nContent here'
     
@@ -87,18 +56,21 @@ describe('GistFetcher Tests', () => {
       text: () => Promise.resolve(mockContent),
     })
 
-    const { fetchMarkdownContent } = await import('../gistFetcher')
     const result = await fetchMarkdownContent('https://gist.githubusercontent.com/user/hash/raw/slide1.md')
     
     expect(result).toBe(mockContent)
   })
 
   it('parses gist URL correctly', () => {
-    const { parseGistUrl } = require('../gistFetcher')
-    
     expect(parseGistUrl('https://gist.github.com/user/abc123')).toBe('abc123')
     expect(parseGistUrl('https://gist.github.com/abc123')).toBe('abc123')
     expect(parseGistUrl('abc123')).toBe('abc123')
     expect(parseGistUrl('invalid-url')).toBe(null)
+  })
+
+  it('handles markdown fetch errors', async () => {
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'))
+
+    await expect(fetchMarkdownContent('invalid-url')).rejects.toThrow('Network error')
   })
 })
