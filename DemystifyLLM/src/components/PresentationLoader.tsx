@@ -7,6 +7,7 @@ import {
   setSlidesData,
 } from "../store/slidesSlice";
 import { loadSampleData } from "../utils/sampleData";
+import { fetchGistContent, parseSlidesFromGist } from "../utils/gistFetcher";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 
@@ -15,7 +16,7 @@ const PresentationLoader: React.FC = () => {
   const dispatch = useAppDispatch();
   const { gistUrl, loading } = useAppSelector((state) => state.slides);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputUrl.trim()) {
       dispatch(setError("Please enter a valid GitHub Gist URL"));
@@ -30,9 +31,35 @@ const PresentationLoader: React.FC = () => {
       return;
     }
 
-    dispatch(setGistUrl(inputUrl.trim()));
     dispatch(setLoading(true));
-    // TODO: Implement actual Gist fetching in Phase 2
+    
+    try {
+      // Fetch Gist content
+      const gistData = await fetchGistContent(inputUrl.trim());
+      
+      // Parse slides from Gist
+      const slidesArray = await parseSlidesFromGist(gistData);
+      
+      // Sort slides by slideIndex to ensure proper order
+      slidesArray.sort((a, b) => a.slideIndex - b.slideIndex);
+      
+      // Create presentation data with proper structure
+      const presentationData = {
+        slides: slidesArray,
+        metadata: {
+          title: gistData.description || "Untitled Presentation",
+          description: gistData.description,
+        }
+      };
+      
+      // Store the slides data and Gist URL
+      dispatch(setSlidesData(presentationData));
+      dispatch(setGistUrl(inputUrl.trim()));
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to load presentation from Gist";
+      dispatch(setError(errorMessage));
+    }
   };
 
   const handleLoadDemo = async () => {

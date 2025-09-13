@@ -6,6 +6,14 @@ export interface Slide {
   slideLabUrl?: string;
 }
 
+export interface SlideWithContent extends Slide {
+  content?: string;
+  title?: string;
+  description?: string;
+  isContentLoaded?: boolean;
+  contentError?: string;
+}
+
 export interface PresentationMetadata {
   title?: string;
   author?: string;

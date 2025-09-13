@@ -1,16 +1,129 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 import { useAppSelector } from '../app/hooks';
+import { fetchMarkdownContent } from '../utils/gistFetcher';
+import { processSlideMarkdown, extractTitle } from '../utils/markdownRenderer';
 import type { Slide } from '../types';
 
 interface SlideViewerProps {
   slide?: Slide;
 }
 
+interface SlideContentState {
+  content: string | null;
+  isLoading: boolean;
+  error: string | null;
+  title: string | null;
+}
+
+// Markdown component customizations
+const markdownComponents: Components = {
+  h1: ({ children }) => (
+    <h1 className="text-3xl font-bold mb-6 text-gray-800 border-b-2 border-blue-200 pb-2">
+      {children}
+    </h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="text-2xl font-semibold mb-4 text-gray-700">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="text-xl font-medium mb-3 text-gray-700">
+      {children}
+    </h3>
+  ),
+  code: ({ className, children }) => {
+    const isInline = !className;
+    return isInline ? (
+      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-red-600">
+        {children}
+      </code>
+    ) : (
+      <code className={className}>
+        {children}
+      </code>
+    );
+  },
+  pre: ({ children }) => (
+    <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4">
+      {children}
+    </pre>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-700 my-4">
+      {children}
+    </blockquote>
+  ),
+  ul: ({ children }) => (
+    <ul className="list-disc list-inside mb-4 space-y-2">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="list-decimal list-inside mb-4 space-y-2">
+      {children}
+    </ol>
+  ),
+  a: ({ href, children }) => (
+    <a 
+      href={href} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="text-blue-600 hover:text-blue-800 underline"
+    >
+      {children}
+    </a>
+  ),
+};
+
 const SlideViewer: React.FC<SlideViewerProps> = ({ slide }) => {
   const { slides, currentSlideIndex } = useAppSelector(state => state.slides);
+  const [contentState, setContentState] = useState<SlideContentState>({
+    content: null,
+    isLoading: false,
+    error: null,
+    title: null,
+  });
   
   // Use prop slide or current slide from state
   const currentSlide = slide || slides[currentSlideIndex];
+
+  // Load markdown content when slide changes
+  useEffect(() => {
+    if (!currentSlide) {
+      setContentState({ content: null, isLoading: false, error: null, title: null });
+      return;
+    }
+
+    const loadSlideContent = async () => {
+      setContentState(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      try {
+        const rawContent = await fetchMarkdownContent(currentSlide.slideContentGist);
+        const processedContent = processSlideMarkdown(rawContent);
+        const slideTitle = extractTitle(rawContent);
+        
+        setContentState({
+          content: processedContent,
+          isLoading: false,
+          error: null,
+          title: slideTitle,
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load slide content';
+        setContentState({
+          content: null,
+          isLoading: false,
+          error: errorMessage,
+          title: null,
+        });
+      }
+    };
+
+    loadSlideContent();
+  }, [currentSlide?.slideContentGist, currentSlide]);
 
   if (!currentSlide) {
     return (
@@ -33,7 +146,7 @@ const SlideViewer: React.FC<SlideViewerProps> = ({ slide }) => {
         {/* Slide Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Slide {currentSlide.slideIndex}
+            {contentState.title || `Slide ${currentSlide.slideIndex}`}
           </h1>
           <div className="h-1 bg-blue-500 w-16 rounded"></div>
         </div>
@@ -41,13 +154,35 @@ const SlideViewer: React.FC<SlideViewerProps> = ({ slide }) => {
         {/* Slide Content Area */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="prose max-w-none">
-            {/* Placeholder for markdown content - will be implemented in Phase 2 */}
-            <div className="text-gray-600 italic">
-              Content from: {currentSlide.slideContentGist}
-            </div>
-            <p className="mt-4">
-              This is a placeholder for the markdown content that will be fetched and rendered in Phase 2.
-            </p>
+            {contentState.isLoading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading slide content...</span>
+              </div>
+            )}
+            
+            {contentState.error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <span className="text-red-600 text-lg mr-2">⚠️</span>
+                  <div>
+                    <h3 className="text-red-800 font-medium">Failed to load slide content</h3>
+                    <p className="text-red-600 text-sm mt-1">{contentState.error}</p>
+                    <p className="text-gray-600 text-xs mt-2">
+                      Content URL: {currentSlide.slideContentGist}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {contentState.content && !contentState.isLoading && !contentState.error && (
+              <div className="markdown-content">
+                <ReactMarkdown components={markdownComponents}>
+                  {contentState.content}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         </div>
 
