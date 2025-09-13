@@ -2,7 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from './app/hooks';
-import { setCurrentSlide } from './store/slidesSlice';
+import { 
+  setCurrentSlide, 
+  nextSlide, 
+  previousSlide, 
+  firstSlide, 
+  lastSlide 
+} from './store/slidesSlice';
 import Layout from './components/Layout';
 import PresentationLoader from './components/PresentationLoader';
 import SlideViewer from './components/SlideViewer';
@@ -66,8 +72,9 @@ const Home: React.FC = () => {
 // Main App component
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { slides } = useAppSelector(state => state.slides);
-  const { theme } = useAppSelector(state => state.preferences);
+  const dispatch = useAppDispatch();
+  const { slides, currentSlideIndex } = useAppSelector(state => state.slides);
+  const { theme, wrapNavigation } = useAppSelector(state => state.preferences);
 
   // Apply theme to document
   useEffect(() => {
@@ -88,20 +95,38 @@ function App() {
         return;
       }
 
+      // Only handle navigation if slides are loaded
+      if (slides.length === 0) {
+        return;
+      }
+
+      const isFirstSlide = currentSlideIndex === 0;
+      const isLastSlide = currentSlideIndex === slides.length - 1;
+
       switch (event.key) {
         case 'ArrowLeft':
           event.preventDefault();
-          // Navigation will be handled by NavigationBar component
+          if (!isFirstSlide) {
+            dispatch(previousSlide());
+          } else if (wrapNavigation) {
+            dispatch(lastSlide());
+          }
           break;
         case 'ArrowRight':
           event.preventDefault();
-          // Navigation will be handled by NavigationBar component
+          if (!isLastSlide) {
+            dispatch(nextSlide());
+          } else if (wrapNavigation) {
+            dispatch(firstSlide());
+          }
           break;
         case 'Home':
           event.preventDefault();
+          dispatch(firstSlide());
           break;
         case 'End':
           event.preventDefault();
+          dispatch(lastSlide());
           break;
         case 'Escape':
           setIsSettingsOpen(false);
@@ -111,7 +136,7 @@ function App() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [dispatch, slides.length, currentSlideIndex, wrapNavigation]);
 
   return (
     <Layout 

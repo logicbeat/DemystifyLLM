@@ -11,32 +11,33 @@ const Layout: React.FC<LayoutProps> = ({ children, navigationBar }) => {
   const { controlBarPosition } = useAppSelector(state => state.preferences);
 
   const getContentPadding = (position: ControlBarPosition) => {
-    const padding = '4rem'; // Adjust based on navigation bar size
-    
     switch (position) {
       case 'top':
-        return { paddingTop: padding };
+        return 'pt-20'; // Tailwind class for top padding
       case 'bottom':
-        return { paddingBottom: padding };
+        return 'pb-20'; // Tailwind class for bottom padding
       case 'left':
-        return { paddingLeft: padding };
+        return 'pl-4 md:pl-48'; // Responsive left padding
       case 'right':
-        return { paddingRight: padding };
+        return 'pr-4 md:pr-48'; // Responsive right padding
       default:
-        return { paddingBottom: padding };
+        return 'pb-20';
     }
   };
 
+  const getContentClasses = () => {
+    const baseClasses = "min-h-screen flex flex-col transition-all duration-300";
+    const paddingClass = getContentPadding(controlBarPosition);
+    return `${baseClasses} ${paddingClass}`;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       {/* Navigation Bar */}
       {navigationBar}
       
       {/* Main Content */}
-      <main 
-        className="min-h-screen flex flex-col"
-        style={getContentPadding(controlBarPosition)}
-      >
+      <main className={getContentClasses()}>
         {children}
       </main>
     </div>
