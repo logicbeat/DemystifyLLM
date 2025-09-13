@@ -7,6 +7,7 @@ import {
   lastSlide,
   setCurrentSlide 
 } from '../store/slidesSlice';
+import { shareUrl, getSlideUrl } from '../utils/urlUtils';
 
 const NavigationBar: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -37,29 +38,35 @@ const NavigationBar: React.FC = () => {
     dispatch(setCurrentSlide(slideIndex));
   };
 
+  const handleShare = async () => {
+    const slideUrl = getSlideUrl(currentSlideIndex + 1);
+    const title = `Slide ${currentSlideIndex + 1} - Interactive Presentation`;
+    await shareUrl(slideUrl, title);
+  };
+
   // Position-based styling
   const getPositionClasses = () => {
-    const baseClasses = "fixed bg-white border shadow-lg p-4 z-50";
+    const baseClasses = "fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg p-4 z-50 transition-all duration-200";
     
     switch (controlBarPosition) {
       case 'top':
-        return `${baseClasses} top-0 left-0 right-0 border-b flex items-center justify-center`;
+        return `${baseClasses} top-0 left-0 right-0 border-b border-t-0 border-l-0 border-r-0 flex items-center justify-center backdrop-blur-sm bg-white/95 dark:bg-gray-800/95`;
       case 'bottom':
-        return `${baseClasses} bottom-0 left-0 right-0 border-t flex items-center justify-center`;
+        return `${baseClasses} bottom-0 left-0 right-0 border-t border-b-0 border-l-0 border-r-0 flex items-center justify-center backdrop-blur-sm bg-white/95 dark:bg-gray-800/95`;
       case 'left':
-        return `${baseClasses} left-0 top-0 bottom-0 border-r flex flex-col items-center justify-center`;
+        return `${baseClasses} left-0 top-0 bottom-0 border-r border-l-0 border-t-0 border-b-0 flex flex-col items-center justify-center backdrop-blur-sm bg-white/95 dark:bg-gray-800/95`;
       case 'right':
-        return `${baseClasses} right-0 top-0 bottom-0 border-l flex flex-col items-center justify-center`;
+        return `${baseClasses} right-0 top-0 bottom-0 border-l border-r-0 border-t-0 border-b-0 flex flex-col items-center justify-center backdrop-blur-sm bg-white/95 dark:bg-gray-800/95`;
       default:
-        return `${baseClasses} bottom-0 left-0 right-0 border-t flex items-center justify-center`;
+        return `${baseClasses} bottom-0 left-0 right-0 border-t border-b-0 border-l-0 border-r-0 flex items-center justify-center backdrop-blur-sm bg-white/95 dark:bg-gray-800/95`;
     }
   };
 
   const getButtonClasses = (disabled: boolean = false) => {
-    return `px-3 py-2 rounded-md border ${
+    return `px-3 py-2 rounded-lg border transition-all duration-200 transform hover:scale-105 active:scale-95 ${
       disabled 
-        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-        : 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+        ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed border-gray-200 dark:border-gray-600' 
+        : 'bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 border-blue-600 dark:border-blue-700 shadow-md hover:shadow-lg'
     }`;
   };
 
@@ -96,7 +103,7 @@ const NavigationBar: React.FC = () => {
 
         {/* Slide Counter and Quick Navigation */}
         <div className={`flex ${isVertical ? 'flex-col' : 'flex-row'} items-center gap-2`}>
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md">
             {currentSlideIndex + 1} of {totalSlides}
           </span>
           
@@ -105,7 +112,7 @@ const NavigationBar: React.FC = () => {
             <select
               value={currentSlideIndex}
               onChange={(e) => handleSlideSelect(parseInt(e.target.value))}
-              className="text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200"
               aria-label="Select slide"
             >
               {slides.map((slide, index) => (
@@ -137,6 +144,16 @@ const NavigationBar: React.FC = () => {
           aria-label="Go to last slide"
         >
           ⏭️
+        </button>
+
+        {/* Share Button */}
+        <button
+          onClick={handleShare}
+          className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 transition-all duration-200 transform hover:scale-105 active:scale-95"
+          title="Share current slide"
+          aria-label="Share current slide"
+        >
+          🔗
         </button>
       </div>
     </nav>

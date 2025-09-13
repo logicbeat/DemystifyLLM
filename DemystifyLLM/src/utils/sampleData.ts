@@ -3,6 +3,28 @@
 
 import type { PresentationData } from '../types';
 
+// Helper function to safely encode Unicode strings to base64
+export const encodeToBase64 = (str: string): string => {
+  try {
+    // Use TextEncoder for proper UTF-8 encoding
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    
+    // Convert Uint8Array to binary string
+    let binaryString = '';
+    for (const byte of data) {
+      binaryString += String.fromCharCode(byte);
+    }
+    
+    return btoa(binaryString);
+  } catch (error) {
+    console.warn('Failed to encode string to base64:', error);
+    // Fallback: remove problematic characters and try again
+    const cleanStr = str.replace(/[^ -~]/g, ''); // Remove non-ASCII printable characters
+    return btoa(cleanStr);
+  }
+};
+
 // Sample markdown content for testing
 const sampleMarkdownContent = {
   slide1: `# Welcome to Interactive Presentations
@@ -101,63 +123,74 @@ This enables:
 
 The interface adapts to different screen sizes automatically.`,
 
-  slide5: `# Next Steps: Phase 3 & Beyond
+  slide5: `# Phase 4 Complete: Interactive Labs & UI Polish!
 
-## Coming Soon
+## 🎉 What's New in Phase 4
 
-### Phase 3: Enhanced Navigation
-- Persistent control bar positioning
-- Theme switching (light/dark mode)
-- Advanced keyboard shortcuts
+### Interactive Labs Integration
+- **Real iframe embedding** for external content
+- **Lab controls**: Minimize/expand, open in new tab
+- **Smart error handling** with retry functionality
+- **Security features**: URL validation and sandboxing
 
-### Phase 4: Interactive Labs
-- Iframe embedding for external content
-- Lab resizing and positioning
-- Offline content caching
+### Enhanced User Experience
+- **Smooth animations** and transitions
+- **Improved dark mode** support throughout
+- **Better responsive design** for all screen sizes
+- **Enhanced accessibility** with proper ARIA labels
 
-### Phase 5: Polish & Testing
-- Comprehensive test suite
+## 🔬 Try the Interactive Labs!
+
+This slide includes a **live coding environment** where you can experiment with React and TypeScript!
+
+### Lab Features:
+- ✅ **Sandboxed execution** for security
+- ✅ **Lazy loading** for performance
+- ✅ **Error recovery** with user-friendly messages
+- ✅ **Mobile responsive** iframe sizing
+
+## 🚀 What's Next?
+
+### Phase 5: Testing & Optimization
+- Comprehensive test coverage
 - Performance optimizations
-- Accessibility improvements
+- Final accessibility audit
+- Production deployment
 
-## Try It Yourself!
+**Thank you for exploring our Enhanced Interactive Presentation SPA!**
 
-1. Create a GitHub Gist with a JSON array of slide definitions
-2. Each slide should have \`slideIndex\` and \`slideContentGist\`
-3. Load your Gist URL in this presentation system
-4. Share your presentation with the world!
-
-*Thank you for exploring the Interactive Presentation SPA!*`
+*Now featuring full iframe labs integration and polished UI/UX.*`
 };
 
 export const samplePresentationData: PresentationData = {
   metadata: {
     title: "Interactive Presentation SPA Demo",
     author: "Development Team",
-    description: "A demonstration of Phase 2: Gist fetching and markdown rendering capabilities"
+    description: "A demonstration of Phase 4: Labs integration and UI/UX polish"
   },
   slides: [
     {
       slideIndex: 1,
-      slideContentGist: "data:text/markdown;base64," + btoa(sampleMarkdownContent.slide1),
-      slideLabUrl: "https://example.com/lab1"
+      slideContentGist: "data:text/markdown;base64," + encodeToBase64(sampleMarkdownContent.slide1),
+      slideLabUrl: "https://codepen.io/team/codepen/embed/PNaGbb?default-tab=result"
     },
     {
       slideIndex: 2,
-      slideContentGist: "data:text/markdown;base64," + btoa(sampleMarkdownContent.slide2)
+      slideContentGist: "data:text/markdown;base64," + encodeToBase64(sampleMarkdownContent.slide2)
     },
     {
       slideIndex: 3,
-      slideContentGist: "data:text/markdown;base64," + btoa(sampleMarkdownContent.slide3),
-      slideLabUrl: "https://example.com/lab3"
+      slideContentGist: "data:text/markdown;base64," + encodeToBase64(sampleMarkdownContent.slide3),
+      slideLabUrl: "https://replit.com/@templates/Simple-Calculator"
     },
     {
       slideIndex: 4,
-      slideContentGist: "data:text/markdown;base64," + btoa(sampleMarkdownContent.slide4)
+      slideContentGist: "data:text/markdown;base64," + encodeToBase64(sampleMarkdownContent.slide4)
     },
     {
       slideIndex: 5,
-      slideContentGist: "data:text/markdown;base64," + btoa(sampleMarkdownContent.slide5)
+      slideContentGist: "data:text/markdown;base64," + encodeToBase64(sampleMarkdownContent.slide5),
+      slideLabUrl: "https://stackblitz.com/edit/react-ts-hello-world?embed=1&file=App.tsx"
     }
   ]
 };

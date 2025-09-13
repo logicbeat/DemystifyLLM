@@ -185,6 +185,18 @@ function App() {
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
       />
+
+      {/* Floating Settings Button */}
+      {slides.length > 0 && (
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className="fixed top-4 right-4 z-40 p-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 transform hover:scale-110 active:scale-95 md:hidden"
+          aria-label="Open settings"
+          title="Settings"
+        >
+          ⚙️
+        </button>
+      )}
     </Layout>
   );
 }
