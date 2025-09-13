@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
   setGistUrl,
@@ -16,7 +16,8 @@ const PresentationLoader: React.FC = () => {
   const dispatch = useAppDispatch();
   const { gistUrl, loading } = useAppSelector((state) => state.slides);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Memoize handleSubmit to prevent unnecessary re-creations
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputUrl.trim()) {
       dispatch(setError("Please enter a valid GitHub Gist URL"));
@@ -60,9 +61,10 @@ const PresentationLoader: React.FC = () => {
       const errorMessage = error instanceof Error ? error.message : "Failed to load presentation from Gist";
       dispatch(setError(errorMessage));
     }
-  };
+  }, [inputUrl, dispatch]);
 
-  const handleLoadDemo = async () => {
+  // Memoize handleLoadDemo to prevent unnecessary re-creations
+  const handleLoadDemo = useCallback(async () => {
     dispatch(setLoading(true));
     try {
       const sampleData = await loadSampleData();
@@ -73,7 +75,12 @@ const PresentationLoader: React.FC = () => {
         error instanceof Error ? error.message : "Failed to load demo data";
       dispatch(setError(errorMessage));
     }
-  };
+  }, [dispatch]);
+
+  // Memoize inputUrl change handler
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputUrl(e.target.value);
+  }, []);
 
   return (
     <div className="w-full max-w-2xl mx-auto p-6 animate-fade-in">
@@ -97,7 +104,7 @@ const PresentationLoader: React.FC = () => {
                 id="gist-url"
                 type="url"
                 value={inputUrl}
-                onChange={(e) => setInputUrl(e.target.value)}
+                onChange={handleInputChange}
                 placeholder="https://gist.github.com/username/your-gist-id"
                 disabled={loading.isLoading}
                 className="w-full transition-all duration-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"

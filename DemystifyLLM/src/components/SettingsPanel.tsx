@@ -1,12 +1,12 @@
-import React from 'react';
-import { useAppDispatch, useAppSelector } from '../app/hooks';
-import { 
-  setControlBarPosition, 
-  setTheme, 
-  setWrapNavigation, 
-  resetPreferences 
-} from '../store/preferencesSlice';
-import type { ControlBarPosition, Theme } from '../types';
+import React, { useCallback } from "react";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import {
+  resetPreferences,
+  setControlBarPosition,
+  setTheme,
+  setWrapNavigation,
+} from "../store/preferencesSlice";
+import type { ControlBarPosition, Theme } from "../types";
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -15,23 +15,32 @@ interface SettingsPanelProps {
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
   const dispatch = useAppDispatch();
-  const preferences = useAppSelector(state => state.preferences);
+  const preferences = useAppSelector((state) => state.preferences);
 
-  const handlePositionChange = (position: ControlBarPosition) => {
-    dispatch(setControlBarPosition(position));
-  };
+  const handlePositionChange = useCallback(
+    (position: ControlBarPosition) => {
+      dispatch(setControlBarPosition(position));
+    },
+    [dispatch]
+  );
 
-  const handleThemeChange = (theme: Theme) => {
-    dispatch(setTheme(theme));
-  };
+  const handleThemeChange = useCallback(
+    (theme: Theme) => {
+      dispatch(setTheme(theme));
+    },
+    [dispatch]
+  );
 
-  const handleWrapNavigationChange = (wrap: boolean) => {
-    dispatch(setWrapNavigation(wrap));
-  };
+  const handleWrapNavigationChange = useCallback(
+    (wrap: boolean) => {
+      dispatch(setWrapNavigation(wrap));
+    },
+    [dispatch]
+  );
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     dispatch(resetPreferences());
-  };
+  }, [dispatch]);
 
   if (!isOpen) return null;
 
@@ -39,7 +48,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 transition-colors duration-200">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Settings</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+            Settings
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
@@ -56,19 +67,21 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
               Control Bar Position
             </legend>
             <div className="grid grid-cols-2 gap-2">
-              {(['top', 'bottom', 'left', 'right'] as ControlBarPosition[]).map((position) => (
-                <button
-                  key={position}
-                  onClick={() => handlePositionChange(position)}
-                  className={`px-3 py-2 text-sm rounded-md border transition-colors duration-200 ${
-                    preferences.controlBarPosition === position
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {position.charAt(0).toUpperCase() + position.slice(1)}
-                </button>
-              ))}
+              {(["top", "bottom", "left", "right"] as ControlBarPosition[]).map(
+                (position) => (
+                  <button
+                    key={position}
+                    onClick={() => handlePositionChange(position)}
+                    className={`px-3 py-2 text-sm rounded-md border transition-colors duration-200 ${
+                      preferences.controlBarPosition === position
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    {position.charAt(0).toUpperCase() + position.slice(1)}
+                  </button>
+                )
+              )}
             </div>
           </fieldset>
 
@@ -78,14 +91,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
               Theme
             </legend>
             <div className="flex gap-2">
-              {(['light', 'dark'] as Theme[]).map((theme) => (
+              {(["light", "dark"] as Theme[]).map((theme) => (
                 <button
                   key={theme}
                   onClick={() => handleThemeChange(theme)}
                   className={`flex-1 px-3 py-2 text-sm rounded-md border transition-colors duration-200 ${
                     preferences.theme === theme
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
                   }`}
                 >
                   {theme.charAt(0).toUpperCase() + theme.slice(1)}
@@ -107,7 +120,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
                 onChange={(e) => handleWrapNavigationChange(e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
               />
-              <label htmlFor="wrap-navigation" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="wrap-navigation"
+                className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+              >
                 Wrap navigation (go to last slide from first, and vice versa)
               </label>
             </div>
@@ -147,4 +163,4 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
   );
 };
 
-export default SettingsPanel;
+export default React.memo(SettingsPanel);
