@@ -1,40 +1,24 @@
 
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from './app/hooks';
-import { 
-  setCurrentSlide, 
-  nextSlide, 
-  previousSlide, 
-  firstSlide, 
-  lastSlide 
-} from './store/slidesSlice';
 import Layout from './components/Layout';
-import PresentationLoader from './components/PresentationLoader';
-import SlideViewer from './components/SlideViewer';
 import NavigationBar from './components/NavigationBar';
+import PresentationLoader from './components/PresentationLoader';
 import SettingsPanel from './components/SettingsPanel';
+import SlideViewer from './components/SlideViewer';
+import {
+  firstSlide,
+  lastSlide,
+  nextSlide,
+  previousSlide
+} from './store/slidesSlice';
 
 // Component for handling slide routing
 const SlideRoute: React.FC = () => {
   const { slideNumber } = useParams<{ slideNumber: string }>();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const { slides, currentSlideIndex } = useAppSelector(state => state.slides);
-
-  useEffect(() => {
-    if (slideNumber) {
-      const slideIndex = parseInt(slideNumber) - 1; // Convert to 0-based index
-      if (slideIndex >= 0 && slideIndex < slides.length) {
-        if (slideIndex !== currentSlideIndex) {
-          dispatch(setCurrentSlide(slideIndex));
-        }
-      } else if (slides.length > 0) {
-        // Invalid slide number, redirect to first slide
-        navigate('/presentation/1', { replace: true });
-      }
-    }
-  }, [slideNumber, slides.length, currentSlideIndex, dispatch, navigate]);
 
   // Sync URL when current slide changes (for programmatic navigation)
   useEffect(() => {
@@ -140,22 +124,7 @@ function App() {
 
   return (
     <Layout 
-      navigationBar={
-        <>
-          <NavigationBar />
-          {/* Settings Button */}
-          {slides.length > 0 && (
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="fixed top-4 right-4 z-40 p-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="Settings"
-              aria-label="Open settings"
-            >
-              ⚙️
-            </button>
-          )}
-        </>
-      }
+      navigationBar={<NavigationBar onSettingsOpen={() => setIsSettingsOpen(true)} />}
     >
       <Routes>
         <Route path="/" element={<Home />} />
@@ -185,18 +154,6 @@ function App() {
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
       />
-
-      {/* Floating Settings Button */}
-      {slides.length > 0 && (
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="fixed top-4 right-4 z-40 p-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 transform hover:scale-110 active:scale-95 md:hidden"
-          aria-label="Open settings"
-          title="Settings"
-        >
-          ⚙️
-        </button>
-      )}
     </Layout>
   );
 }

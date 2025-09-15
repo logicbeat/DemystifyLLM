@@ -9,7 +9,11 @@ import {
 } from '../store/slidesSlice';
 import { shareUrl, getSlideUrl } from '../utils/urlUtils';
 
-const NavigationBar: React.FC = () => {
+interface NavigationBarProps {
+  onSettingsOpen?: () => void;
+}
+
+const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen }) => {
   const dispatch = useAppDispatch();
   const { slides, currentSlideIndex } = useAppSelector(state => state.slides);
   const { controlBarPosition, wrapNavigation } = useAppSelector(state => state.preferences);
@@ -154,6 +158,16 @@ const NavigationBar: React.FC = () => {
           aria-label="Share current slide"
         >
           🔗
+        </button>
+
+        {/* Settings Button */}
+        <button
+          onClick={onSettingsOpen}
+          className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 transition-all duration-200 transform hover:scale-105 active:scale-95"
+          title="Open settings"
+          aria-label="Open settings"
+        >
+          ⚙️
         </button>
       </div>
     </nav>

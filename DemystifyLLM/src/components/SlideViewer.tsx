@@ -292,14 +292,14 @@ const SlideViewer: React.FC<SlideViewerProps> = ({ slide }) => {
 
   return (
     <div className="flex-1 p-4 md:p-8 overflow-auto bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      <div className="max-w-5xl mx-auto">
-        {/* Slide Header */}
+      <div className="max-w-6xl mx-auto">
+        {/* Slide Header
         <div className="mb-6 animate-fade-in">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-200 mb-2">
             {contentState.title || `Slide ${currentSlide.slideIndex}`}
           </h1>
           <div className="h-1 bg-gradient-to-r from-blue-500 to-purple-600 w-16 rounded-full"></div>
-        </div>
+        </div> */}
 
         {/* Slide Content Area */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 md:p-8 mb-6 transition-all duration-200 hover:shadow-xl">
