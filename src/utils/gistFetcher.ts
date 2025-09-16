@@ -4,7 +4,7 @@ import { Octokit } from "octokit";
 import type { PresentationMetadata, Slide } from "../types";
 
 const octokit = new Octokit({
-  auth: `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`,
+  auth: import.meta.env.VITE_GITHUB_PAT,
 });
 
 export interface GistFile {

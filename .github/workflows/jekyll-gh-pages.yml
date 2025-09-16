@@ -60,6 +60,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      VITE_GITHUB_PAT: ${{ secrets.VITE_GITHUB_PAT }}
     runs-on: ubuntu-latest
     needs: build
     steps:
