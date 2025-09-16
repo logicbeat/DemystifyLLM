@@ -10,8 +10,11 @@ export const getCurrentPresentationUrl = (): string => {
 /**
  * Get a shareable URL for a specific slide
  */
-export const getSlideUrl = (slideNumber: number): string => {
+export const getSlideUrl = (slideNumber: number, gistId?: string): string => {
   const baseUrl = window.location.origin + window.location.pathname.split('/presentation')[0];
+  if (gistId && gistId !== 'demo') {
+    return `${baseUrl}/presentation/${gistId}/${slideNumber}`;
+  }
   return `${baseUrl}/presentation/${slideNumber}`;
 };
 
@@ -68,9 +71,29 @@ export const shareUrl = async (url: string, title: string = 'Presentation'): Pro
  * Extract slide number from URL path
  */
 export const getSlideNumberFromPath = (path: string): number | null => {
-  const regex = /\/presentation\/(\d+)/;
-  const match = regex.exec(path);
+  // Handle both old and new URL formats
+  // New format: /presentation/gistId/slideNumber
+  // Old format: /presentation/slideNumber
+  const newFormatRegex = /\/presentation\/[^/]+\/(\d+)/;
+  const oldFormatRegex = /\/presentation\/(\d+)/;
+  
+  let match = newFormatRegex.exec(path);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  
+  match = oldFormatRegex.exec(path);
   return match ? parseInt(match[1], 10) : null;
+};
+
+/**
+ * Extract gist ID from URL path
+ */
+export const getGistIdFromPath = (path: string): string | null => {
+  // Format: /presentation/gistId/slideNumber
+  const regex = /\/presentation\/([^/]+)\/\d+/;
+  const match = regex.exec(path);
+  return match ? match[1] : null;
 };
 
 /**

@@ -8,6 +8,7 @@ interface SlidesState {
   metadata: PresentationMetadata | null;
   loading: LoadingState;
   gistUrl: string | null;
+  gistId: string | null;
 }
 
 const initialState: SlidesState = {
@@ -19,6 +20,7 @@ const initialState: SlidesState = {
     error: null,
   },
   gistUrl: null,
+  gistId: null,
 };
 
 const slidesSlice = createSlice({
@@ -27,6 +29,9 @@ const slidesSlice = createSlice({
   reducers: {
     setGistUrl: (state, action: PayloadAction<string>) => {
       state.gistUrl = action.payload;
+    },
+    setGistId: (state, action: PayloadAction<string>) => {
+      state.gistId = action.payload;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading.isLoading = action.payload;
@@ -75,6 +80,7 @@ const slidesSlice = createSlice({
 
 export const {
   setGistUrl,
+  setGistId,
   setLoading,
   setError,
   setSlidesData,

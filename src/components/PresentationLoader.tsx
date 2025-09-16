@@ -3,10 +3,11 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
   setError,
   setGistUrl,
+  setGistId,
   setLoading,
   setSlidesData,
 } from "../store/slidesSlice";
-import { fetchGistContent, parseSlidesFromGist } from "../utils/gistFetcher";
+import { fetchGistContent, parseSlidesFromGist, parseGistUrl } from "../utils/gistFetcher";
 import { loadSampleData } from "../utils/sampleData";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -36,6 +37,13 @@ const PresentationLoader: React.FC = () => {
       dispatch(setLoading(true));
 
       try {
+        // Extract gist ID from URL
+        const gistId = parseGistUrl(inputUrl.trim());
+        if (!gistId) {
+          dispatch(setError("Invalid GitHub Gist URL format"));
+          return;
+        }
+
         // Fetch Gist content
         const gistData = await fetchGistContent(inputUrl.trim());
 
@@ -54,9 +62,10 @@ const PresentationLoader: React.FC = () => {
           },
         };
 
-        // Store the slides data and Gist URL
+        // Store the slides data, Gist URL, and Gist ID
         dispatch(setSlidesData(presentationData));
         dispatch(setGistUrl(inputUrl.trim()));
+        dispatch(setGistId(gistId));
       } catch (error) {
         const errorMessage =
           error instanceof Error
@@ -75,6 +84,7 @@ const PresentationLoader: React.FC = () => {
       const sampleData = await loadSampleData();
       dispatch(setSlidesData(sampleData));
       dispatch(setGistUrl("demo://sample-presentation"));
+      dispatch(setGistId("demo"));
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to load demo data";

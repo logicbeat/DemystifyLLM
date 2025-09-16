@@ -15,7 +15,7 @@ interface NavigationBarProps {
 
 const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen }) => {
   const dispatch = useAppDispatch();
-  const { slides, currentSlideIndex } = useAppSelector(state => state.slides);
+  const { slides, currentSlideIndex, gistId } = useAppSelector(state => state.slides);
   const { controlBarPosition, wrapNavigation } = useAppSelector(state => state.preferences);
 
   const totalSlides = slides.length;
@@ -43,7 +43,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen }) => {
   };
 
   const handleShare = async () => {
-    const slideUrl = getSlideUrl(currentSlideIndex + 1);
+    const slideUrl = getSlideUrl(currentSlideIndex + 1, gistId || undefined);
     const title = `Slide ${currentSlideIndex + 1} - Interactive Presentation`;
     await shareUrl(slideUrl, title);
   };

@@ -255,3 +255,19 @@ export const parseSlidesFromGist = async (
     throw error;
   }
 };
+
+/**
+ * Load presentation data from a gist ID
+ * This is useful for loading presentations from URL parameters
+ */
+export const loadPresentationFromGistId = async (gistId: string): Promise<[Slide[], PresentationMetadata]> => {
+  try {
+    const { data } = await octokit.rest.gists.get({ gist_id: gistId });
+    return await parseSlidesFromGist(data as GistResponse);
+  } catch (error) {
+    if (error instanceof Error && 'status' in error && error.status === 404) {
+      throw new Error("Gist not found. Please check the Gist ID and make sure it's public.");
+    }
+    throw new Error("Failed to fetch Gist content. Please check your internet connection and try again.");
+  }
+};
