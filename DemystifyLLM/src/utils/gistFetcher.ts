@@ -1,22 +1,72 @@
 // Utility functions for fetching GitHub Gist content
 
-import type { Slide } from '../types';
+import { Octokit } from "octokit";
+import type { PresentationMetadata, Slide } from "../types";
+
+const octokit = new Octokit({
+  auth: `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`,
+});
+
+export interface GistFile {
+  content: string;
+  raw_url: string;
+  filename?: string;
+  type?: string;
+  language?: string;
+  size?: number;
+  truncated?: boolean;
+}
+
+export interface GistOwner {
+  name?: string | null;
+  email?: string | null;
+  login: string;
+  id: number;
+  node_id: string;
+  avatar_url: string;
+  gravatar_id: string | null;
+  url: string;
+  html_url: string;
+  followers_url: string;
+  following_url: string;
+  gists_url: string;
+  starred_url: string;
+  subscriptions_url: string;
+  organizations_url: string;
+  repos_url: string;
+  events_url: string;
+  received_events_url: string;
+  type: string;
+  site_admin: boolean;
+  starred_at?: string;
+  user_view_type?: string;
+}
 
 export interface GistResponse {
+  forks?: any[];
+  history?: any[];
+  fork_of?: any;
+  url: string;
+  forks_url: string;
+  commits_url: string;
+  id: string;
+  node_id: string;
+  git_pull_url: string;
+  git_push_url: string;
+  html_url: string;
   files: {
-    [filename: string]: {
-      content: string;
-      raw_url: string;
-      filename?: string;
-      type?: string;
-      language?: string;
-      size?: number;
-    };
+    [filename: string]: GistFile;
   };
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
-  public?: boolean;
+  public: boolean;
+  created_at: string;
+  updated_at: string;
+  description: string | null;
+  comments: number;
+  comments_enabled?: boolean;
+  user: string | null;
+  comments_url: string;
+  owner?: GistOwner;
+  truncated?: boolean;
 }
 
 /**
@@ -34,14 +84,16 @@ export const parseGistUrl = (url: string): string | null => {
     }
 
     const urlObj = new URL(url);
-    
+
     // Check if it's a GitHub Gist URL
-    if (urlObj.hostname !== 'gist.github.com') {
+    if (urlObj.hostname !== "gist.github.com") {
       return null;
     }
 
-    const pathParts = urlObj.pathname.split('/').filter(part => part.length > 0);
-    
+    const pathParts = urlObj.pathname
+      .split("/")
+      .filter((part) => part.length > 0);
+
     // Format: /username/gist_id or /gist_id
     if (pathParts.length >= 1) {
       const lastPart = pathParts[pathParts.length - 1];
@@ -50,10 +102,10 @@ export const parseGistUrl = (url: string): string | null => {
         return lastPart;
       }
     }
-    
+
     return null;
   } catch (error) {
-    console.error('Error parsing Gist URL:', error);
+    console.error("Error parsing Gist URL:", error);
     return null;
   }
 };
@@ -61,60 +113,71 @@ export const parseGistUrl = (url: string): string | null => {
 /**
  * Fetch Gist content from GitHub API
  */
-export const fetchGistContent = async (gistUrl: string): Promise<GistResponse> => {
+export const fetchGistContent = async (
+  gistUrl: string
+): Promise<GistResponse> => {
   const gistId = parseGistUrl(gistUrl);
-  
   if (!gistId) {
-    throw new Error('Invalid GitHub Gist URL format');
+    throw new Error("Invalid GitHub Gist URL format");
   }
-
   try {
-    const response = await fetch(`https://api.github.com/gists/${gistId}`);
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Gist not found. Please check the URL and make sure the Gist is public.');
-      } else if (response.status === 403) {
-        throw new Error('Access denied. The Gist may be private or you may have hit rate limits.');
-      } else {
-        throw new Error(`Failed to fetch Gist: ${response.status} ${response.statusText}`);
-      }
-    }
-
-    const gistData = await response.json();
-    return gistData;
-  } catch (error) {
-    if (error instanceof Error) {
+    // Use Octokit to fetch the Gist
+    const { data } = await octokit.rest.gists.get({ gist_id: gistId });
+    // Octokit returns the data in a slightly different format, but compatible with GistResponse
+    return data as unknown as GistResponse;
+  } catch (error: any) {
+    if (error.status === 404) {
+      throw new Error(
+        "Gist not found. Please check the URL and make sure the Gist is public."
+      );
+    } else if (error.status === 403) {
+      throw new Error(
+        "Access denied. The Gist may be private or you may have hit rate limits."
+      );
+    } else if (error instanceof Error) {
       throw error;
     }
-    throw new Error('Failed to fetch Gist content');
+    throw new Error("Failed to fetch Gist content");
   }
 };
 
 /**
  * Fetch markdown content from a URL (typically from a Gist raw URL)
  */
-export const fetchMarkdownContent = async (contentUrl: string): Promise<string> => {
+export const fetchMarkdownContent = async (
+  contentUrl: string
+): Promise<string> => {
   try {
     // Handle data URLs (used for sample/demo content)
-    if (contentUrl.startsWith('data:text/markdown;base64,')) {
-      const base64Content = contentUrl.replace('data:text/markdown;base64,', '');
+    if (contentUrl.startsWith("data:text/markdown;base64,")) {
+      const base64Content = contentUrl.replace(
+        "data:text/markdown;base64,",
+        ""
+      );
       return atob(base64Content);
     }
+    const gistId = parseGistUrl(contentUrl);
+    if (!gistId) {
+      throw new Error("Invalid GitHub Gist URL format");
+    }
+    const response = await octokit.rest.gists.get({ gist_id: gistId });
 
-    const response = await fetch(contentUrl);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch markdown content: ${response.status} ${response.statusText}`);
+    if (!response?.data) {
+      throw new Error(
+        `Failed to fetch markdown content: ${response?.status} ${response?.status}`
+      );
     }
 
-    const content = await response.text();
-    return content;
+    if (response?.data?.files && Object.keys(response.data.files).length > 0) {
+      const content = Object.values(response.data.files)[0]?.content;
+      return Promise.resolve<string>(content || "");
+    }
+    return Promise.resolve<string>("");
   } catch (error) {
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error('Failed to fetch markdown content');
+    throw new Error("Failed to fetch markdown content");
   }
 };
 
@@ -122,25 +185,35 @@ export const fetchMarkdownContent = async (contentUrl: string): Promise<string> 
  * Parse slides data from Gist content
  * Looks for a JSON file containing slide definitions
  */
-export const parseSlidesFromGist = async (gistData: GistResponse): Promise<Slide[]> => {
+export const parseSlidesFromGist = async (
+  gistData: GistResponse
+): Promise<[Slide[], PresentationMetadata]> => {
   // Look for JSON files that might contain slide data
-  const possibleSlideFiles = Object.entries(gistData.files).filter(([filename]) => {
-    const lowerName = filename.toLowerCase();
-    return lowerName.endsWith('.json') && 
-           (lowerName.includes('slide') || lowerName.includes('presentation') || 
-            lowerName === 'index.json' || lowerName === 'slides.json');
-  });
+  const possibleSlideFiles = Object.entries(gistData.files).filter(
+    ([filename]) => {
+      const lowerName = filename.toLowerCase();
+      return (
+        lowerName.endsWith(".json") &&
+        (lowerName.includes("slide") ||
+          lowerName.includes("presentation") ||
+          lowerName === "index.json" ||
+          lowerName === "slides.json")
+      );
+    }
+  );
 
   if (possibleSlideFiles.length === 0) {
     // If no specific slide file found, look for any JSON file
-    const jsonFiles = Object.entries(gistData.files).filter(([, file]) => 
-      file.filename?.toLowerCase().endsWith('.json')
+    const jsonFiles = Object.entries(gistData.files).filter(([, file]) =>
+      file.filename?.toLowerCase().endsWith(".json")
     );
-    
+
     if (jsonFiles.length === 0) {
-      throw new Error('No JSON file found in Gist. Please include a JSON file with slide definitions.');
+      throw new Error(
+        "No JSON file found in Gist. Please include a JSON file with slide definitions."
+      );
     }
-    
+
     // Use the first JSON file found
     possibleSlideFiles.push(jsonFiles[0]);
   }
@@ -148,29 +221,32 @@ export const parseSlidesFromGist = async (gistData: GistResponse): Promise<Slide
   try {
     // Try to parse the first suitable JSON file
     const [, slideFile] = possibleSlideFiles[0];
-    const slidesData = JSON.parse(slideFile.content);
-    
+    const slidesData =
+      JSON.parse(slideFile.content).slides || JSON.parse(slideFile.content);
+
     if (!Array.isArray(slidesData)) {
-      throw new Error('Slides data must be a JSON array');
+      throw new Error("Slides data must be a JSON array");
     }
 
     // Validate slide structure
     slidesData.forEach((slide, index) => {
-      if (typeof slide !== 'object' || slide === null) {
+      if (typeof slide !== "object" || slide === null) {
         throw new Error(`Slide ${index + 1} must be an object`);
       }
-      if (typeof slide.slideIndex !== 'number') {
+      if (typeof slide.slideIndex !== "number") {
         throw new Error(`Slide ${index + 1} must have a slideIndex number`);
       }
-      if (typeof slide.slideContentGist !== 'string') {
-        throw new Error(`Slide ${index + 1} must have a slideContentGist string`);
+      if (typeof slide.slideContentGist !== "string") {
+        throw new Error(
+          `Slide ${index + 1} must have a slideContentGist string`
+        );
       }
     });
 
-    return slidesData;
+    return [slidesData, JSON.parse(slideFile.content).metadata || {}];
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error('Invalid JSON format in slides file');
+      throw new Error("Invalid JSON format in slides file");
     }
     throw error;
   }
