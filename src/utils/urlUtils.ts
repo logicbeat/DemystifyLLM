@@ -31,7 +31,7 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
       textArea.style.left = '-9999px';
       document.body.appendChild(textArea);
       textArea.select();
-      // eslint-disable-next-line deprecation/deprecation
+      // Using deprecated execCommand as fallback for older browsers
       const successful = document.execCommand('copy');
       document.body.removeChild(textArea);
       return successful;

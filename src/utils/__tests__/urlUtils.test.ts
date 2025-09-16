@@ -94,6 +94,7 @@ describe('GistFetcher Tests', () => {
   })
 
   it('parses gist URL correctly', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { parseGistUrl } = require('../gistFetcher')
     
     expect(parseGistUrl('https://gist.github.com/user/abc123')).toBe('abc123')

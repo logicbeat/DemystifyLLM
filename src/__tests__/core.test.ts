@@ -64,6 +64,8 @@ describe('Application Tests', () => {
       for (let i = 0; i < 1000; i++) {
         sum += i
       }
+      // Use sum to avoid unused variable warning
+      return sum
     })
 
     expect(duration).toBeGreaterThan(0)

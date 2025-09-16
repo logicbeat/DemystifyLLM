@@ -43,8 +43,11 @@ export interface GistOwner {
 }
 
 export interface GistResponse {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   forks?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   history?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fork_of?: any;
   url: string;
   forks_url: string;
@@ -125,6 +128,7 @@ export const fetchGistContent = async (
     const { data } = await octokit.rest.gists.get({ gist_id: gistId });
     // Octokit returns the data in a slightly different format, but compatible with GistResponse
     return data as unknown as GistResponse;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.status === 404) {
       throw new Error(

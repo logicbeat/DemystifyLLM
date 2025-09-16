@@ -1,0 +1,288 @@
+/* Prism.js GitHub-style syntax highlighting theme */
+
+/* Base styling for code blocks */
+.markdown-content pre[class*="language-"],
+.markdown-content code[class*="language-"] {
+  color: #24292e;
+  background: none;
+  text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.375;
+  direction: ltr;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  tab-size: 4;
+  hyphens: none;
+}
+
+/* Dark mode */
+.dark .markdown-content pre[class*="language-"],
+.dark .markdown-content code[class*="language-"] {
+  color: #f6f8fa;
+}
+
+/* Inline code */
+.markdown-content :not(pre) > code[class*="language-"] {
+  padding: 0.1em 0.3em;
+  border-radius: 0.3em;
+  white-space: normal;
+}
+
+/* Tokens */
+.markdown-content .token.comment,
+.markdown-content .token.prolog,
+.markdown-content .token.doctype,
+.markdown-content .token.cdata {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.dark .markdown-content .token.comment,
+.dark .markdown-content .token.prolog,
+.dark .markdown-content .token.doctype,
+.dark .markdown-content .token.cdata {
+  color: #8b949e;
+}
+
+.markdown-content .token.punctuation {
+  color: #24292e;
+}
+
+.dark .markdown-content .token.punctuation {
+  color: #f6f8fa;
+}
+
+.markdown-content .token.namespace {
+  opacity: 0.7;
+}
+
+.markdown-content .token.property,
+.markdown-content .token.tag,
+.markdown-content .token.boolean,
+.markdown-content .token.number,
+.markdown-content .token.constant,
+.markdown-content .token.symbol,
+.markdown-content .token.deleted {
+  color: #005cc5;
+}
+
+.dark .markdown-content .token.property,
+.dark .markdown-content .token.tag,
+.dark .markdown-content .token.boolean,
+.dark .markdown-content .token.number,
+.dark .markdown-content .token.constant,
+.dark .markdown-content .token.symbol,
+.dark .markdown-content .token.deleted {
+  color: #79c0ff;
+}
+
+.markdown-content .token.selector,
+.markdown-content .token.attr-name,
+.markdown-content .token.string,
+.markdown-content .token.char,
+.markdown-content .token.builtin,
+.markdown-content .token.inserted {
+  color: #032f62;
+}
+
+.dark .markdown-content .token.selector,
+.dark .markdown-content .token.attr-name,
+.dark .markdown-content .token.string,
+.dark .markdown-content .token.char,
+.dark .markdown-content .token.builtin,
+.dark .markdown-content .token.inserted {
+  color: #a5d6ff;
+}
+
+.markdown-content .token.operator,
+.markdown-content .token.entity,
+.markdown-content .token.url,
+.markdown-content .language-css .token.string,
+.markdown-content .style .token.string {
+  color: #d73a49;
+  background: none;
+}
+
+.dark .markdown-content .token.operator,
+.dark .markdown-content .token.entity,
+.dark .markdown-content .token.url,
+.dark .markdown-content .language-css .token.string,
+.dark .markdown-content .style .token.string {
+  color: #ff7b72;
+}
+
+.markdown-content .token.atrule,
+.markdown-content .token.attr-value,
+.markdown-content .token.keyword {
+  color: #d73a49;
+}
+
+.dark .markdown-content .token.atrule,
+.dark .markdown-content .token.attr-value,
+.dark .markdown-content .token.keyword {
+  color: #ff7b72;
+}
+
+.markdown-content .token.function,
+.markdown-content .token.class-name {
+  color: #6f42c1;
+}
+
+.dark .markdown-content .token.function,
+.dark .markdown-content .token.class-name {
+  color: #d2a8ff;
+}
+
+.markdown-content .token.regex,
+.markdown-content .token.important,
+.markdown-content .token.variable {
+  color: #e36209;
+}
+
+.dark .markdown-content .token.regex,
+.dark .markdown-content .token.important,
+.dark .markdown-content .token.variable {
+  color: #ffa657;
+}
+
+.markdown-content .token.important,
+.markdown-content .token.bold {
+  font-weight: bold;
+}
+
+.markdown-content .token.italic {
+  font-style: italic;
+}
+
+.markdown-content .token.entity {
+  cursor: help;
+}
+
+/* Line highlighting */
+.markdown-content pre[data-line] {
+  position: relative;
+  padding: 1em 0 1em 3em;
+}
+
+.markdown-content .line-highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: inherit 0;
+  margin-top: 1em;
+  background: rgba(153, 122, 102, 0.08);
+  background: linear-gradient(to right, rgba(153, 122, 102, 0.1) 70%, rgba(153, 122, 102, 0));
+  pointer-events: none;
+  line-height: inherit;
+  white-space: pre;
+}
+
+/* Copy button styling */
+.code-block {
+  position: relative;
+}
+
+.code-block:hover .copy-button {
+  opacity: 1;
+}
+
+.copy-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.dark .copy-button {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+
+.copy-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.dark .copy-button:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* GitHub-style alerts/admonitions */
+.markdown-content .alert {
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-left: 4px solid;
+  border-radius: 0.375rem;
+}
+
+.markdown-content .alert-note {
+  background-color: #f6f8fa;
+  border-color: #0969da;
+  color: #0969da;
+}
+
+.dark .markdown-content .alert-note {
+  background-color: #0d1117;
+  border-color: #1f6feb;
+  color: #58a6ff;
+}
+
+.markdown-content .alert-tip {
+  background-color: #f6f8fa;
+  border-color: #1a7f37;
+  color: #1a7f37;
+}
+
+.dark .markdown-content .alert-tip {
+  background-color: #0d1117;
+  border-color: #238636;
+  color: #3fb950;
+}
+
+.markdown-content .alert-important {
+  background-color: #f6f8fa;
+  border-color: #8250df;
+  color: #8250df;
+}
+
+.dark .markdown-content .alert-important {
+  background-color: #0d1117;
+  border-color: #a475f9;
+  color: #a475f9;
+}
+
+.markdown-content .alert-warning {
+  background-color: #fff8c5;
+  border-color: #d1242f;
+  color: #d1242f;
+}
+
+.dark .markdown-content .alert-warning {
+  background-color: #1c1917;
+  border-color: #da3633;
+  color: #f85149;
+}
+
+.markdown-content .alert-caution {
+  background-color: #fff1f3;
+  border-color: #cf222e;
+  color: #cf222e;
+}
+
+.dark .markdown-content .alert-caution {
+  background-color: #0d1117;
+  border-color: #da3633;
+  color: #f85149;
+}

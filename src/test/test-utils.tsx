@@ -5,9 +5,10 @@ import { Provider } from 'react-redux'
 import { BrowserRouter } from 'react-router'
 import { store } from '../app/store'
 
-// Test store setup
+// Test store setup - extending RenderOptions for future test configuration options
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
-  // Using the existing store for simplicity in tests
+  // Empty interface is acceptable for extending with potential future options
 }
 
 // Custom render function with providers
@@ -63,6 +64,7 @@ console.log('Hello, world!');
 `
 
 // Mock fetch responses
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mockFetchResponse(data: any, ok = true) {
   return Promise.resolve({
     ok,

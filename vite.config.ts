@@ -32,7 +32,6 @@ export default defineConfig({
           vendor: ['react', 'react-dom', 'react-router', 'react-router-dom'],
           redux: ['@reduxjs/toolkit', 'react-redux'],
           ui: ['lucide-react', 'class-variance-authority', 'clsx', 'tailwind-merge'],
-          markdown: ['react-markdown'],
         },
         // Asset naming for better caching
         assetFileNames: (assetInfo) => {
@@ -64,7 +63,6 @@ export default defineConfig({
       'react-router-dom',
       '@reduxjs/toolkit',
       'react-redux',
-      'react-markdown',
       'lucide-react',
     ],
   },
