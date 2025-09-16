@@ -6,10 +6,12 @@ import { BrowserRouter } from "react-router";
 import { store } from './app/store'
 import { Provider } from 'react-redux'
 
+const basePath = import.meta.env.PROD ? "/DemystifyLLM" : "/";
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
-      <BrowserRouter>
+      <BrowserRouter basename={basePath}>
         <App />
       </BrowserRouter>
     </Provider>
