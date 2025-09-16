@@ -12,7 +12,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
 const PresentationLoader: React.FC = () => {
-  const [inputUrl, setInputUrl] = useState("");
+  const [inputUrl, setInputUrl] = useState("https://gist.github.com/logicbeat/3883611f30bead74a0ab4368cb5cc763");
   const dispatch = useAppDispatch();
   const { gistUrl, loading } = useAppSelector((state) => state.slides);
 

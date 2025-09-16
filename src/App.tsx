@@ -42,7 +42,7 @@ const Home: React.FC = () => {
   useEffect(() => {
     // If slides are loaded, redirect to first slide
     if (slides.length > 0) {
-      navigate('/presentation/1');
+      navigate('/presentation/1', { replace: false });
     }
   }, [slides.length, navigate]);
 
