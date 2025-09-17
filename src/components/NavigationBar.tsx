@@ -3,6 +3,7 @@ import {
   ChevronLast,
   ChevronLeft,
   ChevronRight,
+  FlaskConical,
   Settings,
   Share2,
   TestTube,
@@ -180,17 +181,6 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen, onLabsOpe
           <Share2 className="h-5 w-5" />
         </Button>
 
-        {/* Labs Button - only show if current slide has labs */}
-        {hasLabs && (
-          <Button
-            onClick={onLabsOpen}
-            title="Open labs"
-            aria-label="Open interactive labs"
-          >
-            <TestTube className="h-5 w-5" />
-          </Button>
-        )}
-
         {/* Settings Button */}
         <Button
           onClick={onSettingsOpen}
@@ -199,6 +189,17 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen, onLabsOpe
         >
           <Settings className="h-5 w-5" />
         </Button>
+        {/* Labs Button - only show if current slide has labs */}
+        {hasLabs && (
+          <Button
+            onClick={onLabsOpen}
+            className="bg-green-600 hover:bg-green-700 text-white"
+            title="Open labs"
+            aria-label="Open interactive labs"
+          >
+            <FlaskConical className="h-5 w-5" /> Open Labs
+          </Button>
+        )}
       </div>
     </nav>
   );
