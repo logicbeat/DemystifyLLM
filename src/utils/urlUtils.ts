@@ -11,11 +11,11 @@ export const getCurrentPresentationUrl = (): string => {
  * Get a shareable URL for a specific slide
  */
 export const getSlideUrl = (slideNumber: number, gistId?: string): string => {
-  const baseUrl = window.location.origin + window.location.pathname.split('/presentation')[0];
+  const baseUrl = window.location.origin;
   if (gistId && gistId !== 'demo') {
-    return `${baseUrl}/presentation/${gistId}/${slideNumber}`;
+    return `${baseUrl}/?gistId=${gistId}&slide=${slideNumber}`;
   }
-  return `${baseUrl}/presentation/${slideNumber}`;
+  return `${baseUrl}/?slide=${slideNumber}`;
 };
 
 /**
@@ -68,32 +68,30 @@ export const shareUrl = async (url: string, title: string = 'Presentation'): Pro
 };
 
 /**
- * Extract slide number from URL path
+ * Extract slide number from URL query parameters
  */
-export const getSlideNumberFromPath = (path: string): number | null => {
-  // Handle both old and new URL formats
-  // New format: /presentation/gistId/slideNumber
-  // Old format: /presentation/slideNumber
-  const newFormatRegex = /\/presentation\/[^/]+\/(\d+)/;
-  const oldFormatRegex = /\/presentation\/(\d+)/;
-  
-  let match = newFormatRegex.exec(path);
-  if (match) {
-    return parseInt(match[1], 10);
+export const getSlideNumberFromUrl = (url?: string): number | null => {
+  try {
+    const urlToCheck = url || window.location.href;
+    const urlObj = new URL(urlToCheck);
+    const slideParam = urlObj.searchParams.get('slide');
+    return slideParam ? parseInt(slideParam, 10) : null;
+  } catch {
+    return null;
   }
-  
-  match = oldFormatRegex.exec(path);
-  return match ? parseInt(match[1], 10) : null;
 };
 
 /**
- * Extract gist ID from URL path
+ * Extract gist ID from URL query parameters
  */
-export const getGistIdFromPath = (path: string): string | null => {
-  // Format: /presentation/gistId/slideNumber
-  const regex = /\/presentation\/([^/]+)\/\d+/;
-  const match = regex.exec(path);
-  return match ? match[1] : null;
+export const getGistIdFromUrl = (url?: string): string | null => {
+  try {
+    const urlToCheck = url || window.location.href;
+    const urlObj = new URL(urlToCheck);
+    return urlObj.searchParams.get('gistId');
+  } catch {
+    return null;
+  }
 };
 
 /**

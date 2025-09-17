@@ -18,17 +18,33 @@ describe('Application Tests', () => {
     expect(isValidSlideNumber(6, 5)).toBe(false)
   })
 
-  it('should parse URL paths correctly', () => {
-    const getSlideNumberFromPath = (path: string): number | null => {
-      const regex = /\/presentation\/(\d+)/
-      const match = regex.exec(path)
-      return match ? parseInt(match[1], 10) : null
+  it('should parse URL query parameters correctly', () => {
+    const getSlideNumberFromUrl = (url: string): number | null => {
+      try {
+        const urlObj = new URL(url)
+        const slideParam = urlObj.searchParams.get('slide')
+        return slideParam ? parseInt(slideParam, 10) : null
+      } catch {
+        return null
+      }
     }
 
-    expect(getSlideNumberFromPath('/presentation/3')).toBe(3)
-    expect(getSlideNumberFromPath('/presentation/10')).toBe(10)
-    expect(getSlideNumberFromPath('/about')).toBe(null)
-    expect(getSlideNumberFromPath('')).toBe(null)
+    const getGistIdFromUrl = (url: string): string | null => {
+      try {
+        const urlObj = new URL(url)
+        return urlObj.searchParams.get('gistId')
+      } catch {
+        return null
+      }
+    }
+
+    expect(getSlideNumberFromUrl('http://localhost:4100/?gistId=test123&slide=3')).toBe(3)
+    expect(getSlideNumberFromUrl('http://localhost:4100/?slide=10')).toBe(10)
+    expect(getSlideNumberFromUrl('http://localhost:4100/?gistId=test')).toBe(null)
+    expect(getSlideNumberFromUrl('http://localhost:4100/')).toBe(null)
+    
+    expect(getGistIdFromUrl('http://localhost:4100/?gistId=test123&slide=3')).toBe('test123')
+    expect(getGistIdFromUrl('http://localhost:4100/?slide=3')).toBe(null)
   })
 
   it('should handle gist URL parsing', () => {
@@ -45,8 +61,8 @@ describe('Application Tests', () => {
       }
     }
 
-    expect(parseGistId('https://gist.github.com/user/abc123def456789012345678901234567890')).toBe('abc123def456789012345678901234567890')
-    expect(parseGistId('abc123def456789012345678901234567890')).toBe('abc123def456789012345678901234567890')
+    expect(parseGistId('https://gist.github.com/user/3883611f30bead74a0ab4368cb5cc763')).toBe('3883611f30bead74a0ab4368cb5cc763')
+    expect(parseGistId('3883611f30bead74a0ab4368cb5cc763')).toBe('3883611f30bead74a0ab4368cb5cc763')
     expect(parseGistId('invalid')).toBe(null)
   })
 

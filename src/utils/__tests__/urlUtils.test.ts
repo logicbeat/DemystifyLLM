@@ -2,16 +2,17 @@ import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { 
   getCurrentPresentationUrl, 
   getSlideUrl, 
-  getSlideNumberFromPath, 
+  getSlideNumberFromUrl, 
+  getGistIdFromUrl,
   isValidSlideNumber 
 } from '../urlUtils'
 
 describe('URL Utils Tests', () => {
   // Mock window.location
   const mockLocation = {
-    href: 'http://localhost:4100/presentation/3',
+    href: 'http://localhost:4100/?gistId=test123&slide=3',
     origin: 'http://localhost:4100',
-    pathname: '/presentation/3'
+    pathname: '/'
   }
 
   beforeAll(() => {
@@ -22,18 +23,29 @@ describe('URL Utils Tests', () => {
   })
 
   it('getCurrentPresentationUrl returns current URL', () => {
-    expect(getCurrentPresentationUrl()).toBe('http://localhost:4100/presentation/3')
+    expect(getCurrentPresentationUrl()).toBe('http://localhost:4100/?gistId=test123&slide=3')
   })
 
-  it('getSlideUrl generates correct slide URL', () => {
-    expect(getSlideUrl(5)).toBe('http://localhost:4100/presentation/5')
+  it('getSlideUrl generates correct slide URL with gistId', () => {
+    expect(getSlideUrl(5, 'abc123')).toBe('http://localhost:4100/?gistId=abc123&slide=5')
   })
 
-  it('getSlideNumberFromPath extracts slide number correctly', () => {
-    expect(getSlideNumberFromPath('/presentation/3')).toBe(3)
-    expect(getSlideNumberFromPath('/presentation/10')).toBe(10)
-    expect(getSlideNumberFromPath('/about')).toBe(null)
-    expect(getSlideNumberFromPath('')).toBe(null)
+  it('getSlideUrl generates correct slide URL without gistId', () => {
+    expect(getSlideUrl(3)).toBe('http://localhost:4100/?slide=3')
+  })
+
+  it('getSlideNumberFromUrl extracts slide number correctly', () => {
+    expect(getSlideNumberFromUrl('http://localhost:4100/?gistId=test123&slide=3')).toBe(3)
+    expect(getSlideNumberFromUrl('http://localhost:4100/?slide=10')).toBe(10)
+    expect(getSlideNumberFromUrl('http://localhost:4100/?gistId=test')).toBe(null)
+    expect(getSlideNumberFromUrl('http://localhost:4100/')).toBe(null)
+  })
+
+  it('getGistIdFromUrl extracts gist ID correctly', () => {
+    expect(getGistIdFromUrl('http://localhost:4100/?gistId=test123&slide=3')).toBe('test123')
+    expect(getGistIdFromUrl('http://localhost:4100/?gistId=abc123')).toBe('abc123')
+    expect(getGistIdFromUrl('http://localhost:4100/?slide=3')).toBe(null)
+    expect(getGistIdFromUrl('http://localhost:4100/')).toBe(null)
   })
 
   it('isValidSlideNumber validates slide numbers', () => {

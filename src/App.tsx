@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from './app/hooks';
 import Layout from './components/Layout';
 import NavigationBar from './components/NavigationBar';
@@ -21,12 +21,15 @@ import {
 } from './store/slidesSlice';
 import { loadPresentationFromGistId } from './utils/gistFetcher';
 
-// Component for handling gist-based slide routing
-const GistSlideRoute: React.FC = () => {
-  const { gistId: urlGistId, slideNumber } = useParams<{ gistId: string; slideNumber: string }>();
+// Component for handling query parameter-based slide routing
+const PresentationRoute: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { slides, currentSlideIndex, gistId, loading } = useAppSelector(state => state.slides);
+
+  const urlGistId = searchParams.get('gistId');
+  const slideNumber = searchParams.get('slide');
 
   // Load presentation from gist ID if not already loaded
   useEffect(() => {
@@ -71,10 +74,13 @@ const GistSlideRoute: React.FC = () => {
   // Sync URL when current slide changes (for programmatic navigation)
   useEffect(() => {
     if (slides.length > 0 && urlGistId) {
-      const expectedUrl = `/presentation/${urlGistId}/${currentSlideIndex + 1}`;
-      const currentUrl = `/presentation/${urlGistId}/${slideNumber || '1'}`;
-      if (expectedUrl !== currentUrl) {
-        navigate(expectedUrl, { replace: true });
+      const expectedSlideNumber = currentSlideIndex + 1;
+      const currentUrlSlideNumber = parseInt(slideNumber || '1', 10);
+      if (expectedSlideNumber !== currentUrlSlideNumber) {
+        const newSearchParams = new URLSearchParams();
+        newSearchParams.set('gistId', urlGistId);
+        newSearchParams.set('slide', expectedSlideNumber.toString());
+        navigate(`/?${newSearchParams.toString()}`, { replace: true });
       }
     }
   }, [currentSlideIndex, slides.length, slideNumber, navigate, urlGistId]);
@@ -117,38 +123,36 @@ const GistSlideRoute: React.FC = () => {
   return <SlideViewer />;
 };
 
-// Component for handling slide routing
-const SlideRoute: React.FC = () => {
-  const { slideNumber } = useParams<{ slideNumber: string }>();
-  const navigate = useNavigate();
-  const { slides, currentSlideIndex, gistId } = useAppSelector(state => state.slides);
-
-  // Sync URL when current slide changes (for programmatic navigation)
-  useEffect(() => {
-    if (slides.length > 0 && gistId) {
-      const expectedUrl = `/presentation/${gistId}/${currentSlideIndex + 1}`;
-      const currentUrl = `/presentation/${slideNumber || '1'}`;
-      if (expectedUrl !== currentUrl) {
-        navigate(expectedUrl, { replace: true });
-      }
-    }
-  }, [currentSlideIndex, slides.length, slideNumber, navigate, gistId]);
-
-  return <SlideViewer />;
-};
-
 // Home component
 const Home: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const { slides, gistId } = useAppSelector(state => state.slides);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // If slides are loaded, redirect to first slide with gist ID in URL
-    if (slides.length > 0 && gistId) {
-      navigate(`/presentation/${gistId}/1`, { replace: false });
-    }
-  }, [slides.length, gistId, navigate]);
+  const urlGistId = searchParams.get('gistId');
+  const slideNumber = searchParams.get('slide');
 
+  useEffect(() => {
+    // If slides are loaded and we have query parameters, render the presentation
+    if (slides.length > 0 && gistId && urlGistId) {
+      // This is handled by PresentationRoute component
+      return;
+    }
+    // If slides are loaded but no query parameters, redirect to first slide with gist ID in URL
+    else if (slides.length > 0 && gistId && !urlGistId) {
+      const newSearchParams = new URLSearchParams();
+      newSearchParams.set('gistId', gistId);
+      newSearchParams.set('slide', '1');
+      navigate(`/?${newSearchParams.toString()}`, { replace: false });
+    }
+  }, [slides.length, gistId, navigate, urlGistId, slideNumber]);
+
+  // If we have query parameters, show the presentation
+  if (urlGistId && slideNumber) {
+    return <PresentationRoute />;
+  }
+
+  // Otherwise show the presentation loader
   return (
     <div className="flex-1 flex items-center justify-center">
       <PresentationLoader />
@@ -231,8 +235,6 @@ function App() {
     >
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/presentation/:gistId/:slideNumber" element={<GistSlideRoute />} />
-        <Route path="/presentation/:slideNumber" element={<SlideRoute />} />
         <Route path="*" element={
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">

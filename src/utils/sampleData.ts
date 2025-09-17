@@ -109,9 +109,9 @@ This system provides a robust foundation for interactive learning experiences.`,
 
 ## URL-Based Navigation
 
-Each slide has its own URL:
-- \`/presentation/1\` - First slide
-- \`/presentation/2\` - Second slide
+Each slide has its own URL with query parameters:
+- \`/?gistId=demo&slide=1\` - First slide
+- \`/?gistId=demo&slide=2\` - Second slide
 - And so on...
 
 This enables:
