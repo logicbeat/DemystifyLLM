@@ -3,7 +3,7 @@
 export interface Slide {
   slideIndex: number;
   slideContentGist: string;
-  slideLabUrl?: string;
+  slideLabUrl?: string | string[];
 }
 
 export interface SlideWithContent extends Slide {

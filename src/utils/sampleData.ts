@@ -190,7 +190,11 @@ export const samplePresentationData: PresentationData = {
     {
       slideIndex: 5,
       slideContentGist: "data:text/markdown;base64," + encodeToBase64(sampleMarkdownContent.slide5),
-      slideLabUrl: "https://stackblitz.com/edit/react-ts-hello-world?embed=1&file=App.tsx"
+      slideLabUrl: [
+        "https://codepen.io/team/codepen/embed/PNaGbb?default-tab=result",
+        "https://stackblitz.com/edit/react-ts-hello-world?embed=1&file=App.tsx",
+        "https://replit.com/@templates/Simple-Calculator"
+      ]
     }
   ]
 };

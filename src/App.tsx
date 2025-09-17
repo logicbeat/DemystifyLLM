@@ -7,6 +7,7 @@ import NavigationBar from './components/NavigationBar';
 import PresentationLoader from './components/PresentationLoader';
 import SettingsPanel from './components/SettingsPanel';
 import SlideViewer from './components/SlideViewer';
+import { LabsModal } from './components/LabsModal';
 import {
   firstSlide,
   lastSlide,
@@ -163,9 +164,13 @@ const Home: React.FC = () => {
 // Main App component
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLabsOpen, setIsLabsOpen] = useState(false);
   const dispatch = useAppDispatch();
   const { slides, currentSlideIndex } = useAppSelector(state => state.slides);
   const { theme, wrapNavigation } = useAppSelector(state => state.preferences);
+
+  // Get current slide for labs modal
+  const currentSlide = slides[currentSlideIndex] || null;
 
   // Apply theme to document
   useEffect(() => {
@@ -221,6 +226,7 @@ function App() {
           break;
         case 'Escape':
           setIsSettingsOpen(false);
+          setIsLabsOpen(false);
           break;
       }
     };
@@ -231,7 +237,12 @@ function App() {
 
   return (
     <Layout 
-      navigationBar={<NavigationBar onSettingsOpen={() => setIsSettingsOpen(true)} />}
+      navigationBar={
+        <NavigationBar 
+          onSettingsOpen={() => setIsSettingsOpen(true)}
+          onLabsOpen={() => setIsLabsOpen(true)}
+        />
+      }
     >
       <Routes>
         <Route path="/" element={<Home />} />
@@ -259,6 +270,13 @@ function App() {
       <SettingsPanel 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
+      />
+
+      {/* Labs Modal */}
+      <LabsModal
+        isOpen={isLabsOpen}
+        onClose={() => setIsLabsOpen(false)}
+        slide={currentSlide}
       />
     </Layout>
   );

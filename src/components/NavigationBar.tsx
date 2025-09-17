@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Settings,
   Share2,
+  TestTube,
 } from "lucide-react";
 import React from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -20,9 +21,10 @@ import Button from "./ui/button";
 
 interface NavigationBarProps {
   onSettingsOpen?: () => void;
+  onLabsOpen?: () => void;
 }
 
-const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen }) => {
+const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen, onLabsOpen }) => {
   const dispatch = useAppDispatch();
   const { slides, currentSlideIndex, gistId } = useAppSelector(
     (state) => state.slides
@@ -34,6 +36,13 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen }) => {
   const totalSlides = slides.length;
   const isFirstSlide = currentSlideIndex === 0;
   const isLastSlide = currentSlideIndex === totalSlides - 1;
+  
+  // Check if current slide has labs
+  const currentSlide = slides[currentSlideIndex];
+  const hasLabs = currentSlide?.slideLabUrl && 
+    (Array.isArray(currentSlide.slideLabUrl) ? 
+      currentSlide.slideLabUrl.length > 0 : 
+      true);
 
   const handlePrevious = () => {
     if (!isFirstSlide) {
@@ -170,6 +179,17 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen }) => {
         >
           <Share2 className="h-5 w-5" />
         </Button>
+
+        {/* Labs Button - only show if current slide has labs */}
+        {hasLabs && (
+          <Button
+            onClick={onLabsOpen}
+            title="Open labs"
+            aria-label="Open interactive labs"
+          >
+            <TestTube className="h-5 w-5" />
+          </Button>
+        )}
 
         {/* Settings Button */}
         <Button
