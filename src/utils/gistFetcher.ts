@@ -339,6 +339,38 @@ export const fetchGistContent = async (
 };
 
 /**
+ * Fetch content from raw URL when gist file is truncated
+ */
+export const fetchRawContent = async (rawUrl: string): Promise<string> => {
+  try {
+    const response = await fetch(rawUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch raw content: ${response.status} ${response.statusText}`);
+    }
+    return await response.text();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Failed to fetch raw content");
+  }
+};
+
+/**
+ * Get content from gist file, fetching from raw URL if truncated
+ */
+export const getFileContent = async (file: any): Promise<string> => {
+  // If file is truncated, fetch from raw URL
+  if (file.truncated && file.raw_url) {
+    console.log(`File is truncated, fetching from raw URL: ${file.raw_url}`);
+    return await fetchRawContent(file.raw_url);
+  }
+  
+  // Return content directly if not truncated
+  return file.content || "";
+};
+
+/**
  * Fetch markdown content from a URL (typically from a Gist raw URL)
  * Now supports filename specification via URL fragments and caching
  */
@@ -374,17 +406,17 @@ export const fetchMarkdownContent = async (
               file && file.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
             );
             if (targetFile) {
-              return Promise.resolve<string>(targetFile.content || "");
+              return await getFileContent(targetFile);
             }
             // If specific file not found, log a warning but continue with first file
             console.warn(`File "${gistInfo.filename}" not found in cached gist, using first available file`);
           }
           
           // Fall back to first file if no specific filename or file not found
-          const content = Object.values(cachedContent.files)[0]?.content;
-          return Promise.resolve<string>(content || "");
+          const firstFile = Object.values(cachedContent.files)[0];
+          return firstFile ? await getFileContent(firstFile) : "";
         }
-        return Promise.resolve<string>("");
+        return "";
       }
     }
     
@@ -408,17 +440,17 @@ export const fetchMarkdownContent = async (
           file && file.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
         );
         if (targetFile) {
-          return Promise.resolve<string>(targetFile.content || "");
+          return await getFileContent(targetFile);
         }
         // If specific file not found, log a warning but continue with first file
         console.warn(`File "${gistInfo.filename}" not found in gist, using first available file`);
       }
       
       // Fall back to first file if no specific filename or file not found
-      const content = Object.values(response.data.files)[0]?.content;
-      return Promise.resolve<string>(content || "");
+      const firstFile = Object.values(response.data.files)[0];
+      return firstFile ? await getFileContent(firstFile) : "";
     }
-    return Promise.resolve<string>("");
+    return "";
   } catch (error) {
     if (error instanceof Error) {
       throw error;
@@ -451,9 +483,9 @@ export const fetchImageContent = async (
           // If a specific filename was provided in the URL fragment, try to find that file
           if (gistInfo.filename) {
             const targetFile = Object.values(cachedContent.files).find(file => 
-              file && file.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
+              file?.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
             );
-            if (targetFile && targetFile.raw_url) {
+            if (targetFile?.raw_url) {
               return { 
                 type: 'image', 
                 url: targetFile.raw_url, 
@@ -466,9 +498,9 @@ export const fetchImageContent = async (
           
           // Fall back to first image file if no specific filename or file not found
           const imageFile = Object.values(cachedContent.files).find(file => 
-            file && file.filename && isImageFile(file.filename)
+            file?.filename && isImageFile(file.filename)
           );
-          if (imageFile && imageFile.raw_url) {
+          if (imageFile?.raw_url) {
             return { 
               type: 'image', 
               url: imageFile.raw_url, 
@@ -497,9 +529,9 @@ export const fetchImageContent = async (
       // If a specific filename was provided in the URL fragment, try to find that file
       if (gistInfo.filename) {
         const targetFile = Object.values(response.data.files).find(file => 
-          file && file.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
+          file?.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
         );
-        if (targetFile && targetFile.raw_url) {
+        if (targetFile?.raw_url) {
           return { 
             type: 'image', 
             url: targetFile.raw_url, 
@@ -512,9 +544,9 @@ export const fetchImageContent = async (
       
       // Fall back to first image file if no specific filename or file not found
       const imageFile = Object.values(response.data.files).find(file => 
-        file && file.filename && isImageFile(file.filename)
+        file?.filename && isImageFile(file.filename)
       );
-      if (imageFile && imageFile.raw_url) {
+      if (imageFile?.raw_url) {
         return { 
           type: 'image', 
           url: imageFile.raw_url, 
@@ -625,8 +657,10 @@ export const parseSlidesFromGist = async (
   try {
     // Try to parse the first suitable JSON file
     const [, slideFile] = possibleSlideFiles[0];
-    const slidesData =
-      JSON.parse(slideFile.content).slides || JSON.parse(slideFile.content);
+    
+    // Get content, handling truncated files
+    const content = await getFileContent(slideFile);
+    const slidesData = JSON.parse(content).slides || JSON.parse(content);
 
     if (!Array.isArray(slidesData)) {
       throw new Error("Slides data must be a JSON array");
@@ -647,7 +681,7 @@ export const parseSlidesFromGist = async (
       }
     });
 
-    return [slidesData, JSON.parse(slideFile.content).metadata || {}];
+    return [slidesData, JSON.parse(content).metadata || {}];
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error("Invalid JSON format in slides file");
