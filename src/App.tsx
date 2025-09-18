@@ -8,6 +8,7 @@ import PresentationLoader from './components/PresentationLoader';
 import SettingsPanel from './components/SettingsPanel';
 import SlideViewer from './components/SlideViewer';
 import { LabsModal } from './components/LabsModal';
+import CacheDebugger from './components/CacheDebugger';
 import {
   firstSlide,
   lastSlide,
@@ -278,6 +279,11 @@ function App() {
         onClose={() => setIsLabsOpen(false)}
         slide={currentSlide}
       />
+
+      {/* Cache Debugger - only show in development */}
+      {import.meta.env.DEV && (
+        <CacheDebugger isVisible={true} />
+      )}
     </Layout>
   );
 }

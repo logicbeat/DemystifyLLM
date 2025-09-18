@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Presentation JSON Builder – Modern UI</title>
+
+<style>
+  /* ---------- Global ---------- */
+  body{
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",Arial,sans-serif;
+    background:#f0f2f5;
+    margin:0;padding:20px;
+  }
+  h1{font-size:1.8rem;margin-bottom:.5rem;color:#333;}
+  .container{max-width:960px;margin:auto;display:flex;flex-direction:column;gap:2rem;}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:#fff;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,.05);
+    padding:1.5rem;
+    display:flex;flex-direction:column;gap:.8rem;
+  }
+  .card-header{display:flex;justify-content:space-between;align-items:center;}
+  .card-title{font-weight:bold;font-size:1.2rem;color:#222;}
+
+  /* ---------- Inputs ---------- */
+  label{font-weight:600;font-size:.9rem;color:#555;margin-bottom:.2rem;}
+  input[type="text"],input[type="number"],textarea{
+    width:100%;padding:.6rem 1rem;
+    border:1px solid #d0d4da;border-radius:8px;
+    font-size:.95rem;background:#fafafa;
+  }
+  textarea{resize:none;height:80px;}
+
+  /* ---------- Buttons ---------- */
+  button{
+    padding:.6rem 1.2rem;
+    border:none;border-radius:8px;
+    font-size:.95rem;cursor:pointer;
+  }
+  button.primary{background:#0066cc;color:white;}
+  button.danger{background:#c00;color:white;}
+  button.success{background:#28a745;color:white;}
+
+  /* ---------- Slides list ---------- */
+  .slides-list{display:flex;flex-direction:column;gap:.6rem;}
+  .slide-card{
+    border-left:4px solid #0066cc;
+    padding:.8rem 1.2rem;background:#f9fbff;border-radius:6px;
+    display:flex;flex-direction:column;gap:.4rem;
+  }
+  .slide-header{display:flex;justify-content:space-between;align-items:center;}
+
+  /* ---------- Output ---------- */
+  pre#output{
+    background:#272822;color:#f8f8f2;
+    padding:1rem;border-radius:8px;overflow:auto;font-family:"Fira Code",monospace;
+    white-space:pre-wrap;
+  }
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>Presentation JSON Builder – Modern UI</h1>
+
+  <!-- Metadata Card -->
+  <div class="card" id="metadata-card">
+    <div class="card-header"><span class="card-title">Metadata</span></div>
+    <label for="title">Title</label><input type="text" id="title" placeholder="e.g. My Presentation">
+    <label for="author">Author</label><input type="text" id="author" placeholder="Your Name">
+    <label for="description">Description</label>
+    <textarea id="description" placeholder="Short description…"></textarea>
+  </div>
+
+  <!-- Slides Card -->
+  <div class="card" id="slides-card">
+    <div class="card-header">
+      <span class="card-title">Slides</span>
+      <button class="primary" onclick="addSlide()">+ Add Slide</button>
+    </div>
+    <div id="slides-list" class="slides-list"></div>
+  </div>
+
+  <!-- Generate Button -->
+  <button class="success" style="align-self:flex-start;" onclick="generate()">Generate JSON</button>
+
+  <!-- Output -->
+  <pre id="output"></pre>
+</div>
+
+<script>
+/* ---------- Utility ---------- */
+function createInput(type, placeholder='', value='') {
+  const inp = document.createElement('input');
+  inp.type = type;
+  inp.placeholder = placeholder;
+  inp.value = value;
+  return inp;
+}
+function createTextarea(placeholder='', value='') {
+  const ta = document.createElement('textarea');
+  ta.placeholder = placeholder;
+  ta.value = value;
+  return ta;
+}
+
+/* ---------- Slide Management ---------- */
+function addSlide(index=null) {
+  const container = document.getElementById('slides-list');
+
+  const slideCard = document.createElement('div');
+  slideCard.className='slide-card';
+
+  // Header: index + remove button
+  const header = document.createElement('div');
+  header.className='slide-header';
+  const idxLabel = document.createElement('label');
+  idxLabel.textContent = 'Index: ';
+  const idxInput = createInput('number', '0', index ?? '');
+  idxLabel.appendChild(idxInput);
+  header.appendChild(idxLabel);
+
+  const rmBtn = document.createElement('button');
+  rmBtn.className='danger';
+  rmBtn.textContent='✖';
+  rmBtn.onclick = () => container.removeChild(slideCard);
+  header.appendChild(rmBtn);
+
+  slideCard.appendChild(header);
+
+  // Content gist
+  const contentLabel = document.createElement('label');
+  contentLabel.textContent='Slide Content Gist';
+  const contentInput = createTextarea('e.g. “Overview of the project”', '');
+  slideCard.appendChild(contentLabel);
+  slideCard.appendChild(contentInput);
+
+  // Lab URLs
+  const urlLabel = document.createElement('label');
+  urlLabel.textContent='Lab URL(s) (comma separated)';
+  const urlInput = createTextarea('https://lab.com', '');
+  slideCard.appendChild(urlLabel);
+  slideCard.appendChild(urlInput);
+
+  container.appendChild(slideCard);
+}
+
+/* ---------- Generate JSON ---------- */
+function generate() {
+  const slides = [];
+  document.querySelectorAll('.slide-card').forEach(card => {
+    const idx = parseInt(card.querySelector('input[type=number]').value,10);
+    const content = card.querySelectorAll('textarea')[0].value.trim();
+    let urls = card.querySelectorAll('textarea')[1].value.split(',')
+                  .map(u=>u.trim()).filter(Boolean);
+    if (urls.length===0) urls=undefined;
+    else if (urls.length===1) urls=urls[0];
+    slides.push({
+      slideIndex: idx,
+      slideContentGist: content,
+      ...(urls && {slideLabUrl: urls})
+    });
+  });
+
+  const metadata = {
+    title: document.getElementById('title').value.trim() || undefined,
+    author: document.getElementById('author').value.trim() || undefined,
+    description: document.getElementById('description').value.trim() || undefined
+  };
+
+  const presentation = {
+    slides,
+    ...(Object.values(metadata).some(v=>v) && {metadata})
+  };
+
+  document.getElementById('output').textContent = JSON.stringify(presentation, null, 2);
+}
+
+/* ---------- Init ---------- */
+addSlide(); // start with one empty slide
+</script>
+</body>
+</html>

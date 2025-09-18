@@ -5,3 +5,4 @@ export { default as NavigationBar } from './NavigationBar';
 export { default as SettingsPanel } from './SettingsPanel';
 export { default as Layout } from './Layout';
 export { LabsModal } from './LabsModal';
+export { default as CacheDebugger } from './CacheDebugger';

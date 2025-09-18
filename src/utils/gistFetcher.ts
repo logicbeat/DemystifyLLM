@@ -1,7 +1,7 @@
 // Utility functions for fetching GitHub Gist content
 
 import { Octokit } from "octokit";
-import type { PresentationMetadata, Slide } from "../types";
+import type { PresentationMetadata, Slide, ParsedGistInfo } from "../types";
 
 const octokit = new Octokit({
   auth: import.meta.env.VITE_GITHUB_PAT,
@@ -73,17 +73,27 @@ export interface GistResponse {
 }
 
 /**
- * Parse a GitHub Gist URL to extract the Gist ID
+ * Parse a GitHub Gist URL to extract the Gist ID and optional filename
  * Supports various URL formats:
  * - https://gist.github.com/username/gist_id
+ * - https://gist.github.com/username/gist_id#file-filename-ext
  * - https://gist.github.com/gist_id
  * - gist_id (direct ID)
  */
 export const parseGistUrl = (url: string): string | null => {
+  const result = parseGistUrlWithFilename(url);
+  return result?.gistId || null;
+};
+
+/**
+ * Parse a GitHub Gist URL to extract both the Gist ID and filename
+ * Returns an object with gistId and optional filename
+ */
+export const parseGistUrlWithFilename = (url: string): ParsedGistInfo | null => {
   try {
     // If it's just a gist ID (alphanumeric string)
     if (/^[a-f0-9]+$/i.test(url.trim())) {
-      return url.trim();
+      return { gistId: url.trim() };
     }
 
     const urlObj = new URL(url);
@@ -102,7 +112,17 @@ export const parseGistUrl = (url: string): string | null => {
       const lastPart = pathParts[pathParts.length - 1];
       // Gist IDs are typically 32 character hex strings
       if (/^[a-f0-9]+$/i.test(lastPart)) {
-        return lastPart;
+        const result: ParsedGistInfo = { gistId: lastPart };
+        
+        // Check for filename in the fragment (hash)
+        if (urlObj.hash) {
+          const filename = parseFilenameFromFragment(urlObj.hash);
+          if (filename) {
+            result.filename = filename;
+          }
+        }
+        
+        return result;
       }
     }
 
@@ -114,20 +134,162 @@ export const parseGistUrl = (url: string): string | null => {
 };
 
 /**
- * Fetch Gist content from GitHub API
+ * Parse filename from URL fragment
+ * Handles fragments like #file-slide2-md or #file-readme-md
+ */
+export const parseFilenameFromFragment = (fragment: string): string | null => {
+  if (!fragment) return null;
+  
+  // Remove the # if present
+  const hash = fragment.startsWith('#') ? fragment.slice(1) : fragment;
+  
+  // GitHub Gist fragments for files follow the pattern: file-{filename-with-dashes}-{extension}
+  // Example: #file-slide2-md becomes slide2.md
+  const fileRegex = /^file-(.+)-([a-z0-9]+)$/i;
+  const fileMatch = fileRegex.exec(hash);
+  if (fileMatch) {
+    const [, namePart, extension] = fileMatch;
+    // Replace dashes with dots for the filename, except keep dashes in the base name
+    // Convert file-slide2-md to slide2.md
+    const filename = namePart.replace(/-/g, '') + '.' + extension;
+    return filename;
+  }
+  
+  return null;
+};
+
+/**
+ * Get cache key for storing gist content in sessionStorage
+ */
+const getGistCacheKey = (gistId: string): string => `gist_cache_${gistId}`;
+
+/**
+ * Get cache statistics for debugging
+ */
+export const getCacheStats = (): { totalCachedGists: number; cacheKeys: string[] } => {
+  try {
+    if (typeof window === 'undefined' || !window.sessionStorage) {
+      return { totalCachedGists: 0, cacheKeys: [] };
+    }
+
+    const cacheKeys: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key?.startsWith('gist_cache_')) {
+        cacheKeys.push(key);
+      }
+    }
+    
+    return {
+      totalCachedGists: cacheKeys.length,
+      cacheKeys: cacheKeys.map(key => key.replace('gist_cache_', ''))
+    };
+  } catch (error) {
+    console.warn('Failed to get cache stats:', error);
+    return { totalCachedGists: 0, cacheKeys: [] };
+  }
+};
+
+/**
+ * Get cached gist content from sessionStorage
+ */
+const getCachedGistContent = (gistId: string): GistResponse | null => {
+  try {
+    // Check if sessionStorage is available
+    if (typeof window === 'undefined' || !window.sessionStorage) {
+      return null;
+    }
+    
+    const cacheKey = getGistCacheKey(gistId);
+    const cachedData = sessionStorage.getItem(cacheKey);
+    if (cachedData) {
+      return JSON.parse(cachedData) as GistResponse;
+    }
+  } catch (error) {
+    console.warn('Failed to retrieve cached gist content:', error);
+  }
+  return null;
+};
+
+/**
+ * Cache gist content in sessionStorage
+ */
+const setCachedGistContent = (gistId: string, data: GistResponse): void => {
+  try {
+    // Check if sessionStorage is available
+    if (typeof window === 'undefined' || !window.sessionStorage) {
+      return;
+    }
+    
+    const cacheKey = getGistCacheKey(gistId);
+    sessionStorage.setItem(cacheKey, JSON.stringify(data));
+  } catch (error) {
+    console.warn('Failed to cache gist content:', error);
+  }
+};
+
+/**
+ * Clear cached gist content for a specific gist ID
+ */
+export const clearGistCache = (gistId?: string): void => {
+  try {
+    // Check if sessionStorage is available
+    if (typeof window === 'undefined' || !window.sessionStorage) {
+      return;
+    }
+    
+    if (gistId) {
+      // Clear specific gist cache
+      const cacheKey = getGistCacheKey(gistId);
+      sessionStorage.removeItem(cacheKey);
+    } else {
+      // Clear all gist caches
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key?.startsWith('gist_cache_')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => sessionStorage.removeItem(key));
+    }
+  } catch (error) {
+    console.warn('Failed to clear gist cache:', error);
+  }
+};
+
+/**
+ * Fetch Gist content from GitHub API with sessionStorage caching
  */
 export const fetchGistContent = async (
-  gistUrl: string
+  gistUrl: string,
+  forceRefresh: boolean = false
 ): Promise<GistResponse> => {
   const gistId = parseGistUrl(gistUrl);
   if (!gistId) {
     throw new Error("Invalid GitHub Gist URL format");
   }
+
+  // Check cache first unless force refresh is requested
+  if (!forceRefresh) {
+    const cachedContent = getCachedGistContent(gistId);
+    if (cachedContent) {
+      console.log(`Using cached content for gist ${gistId}`);
+      return cachedContent;
+    }
+  }
+
   try {
     // Use Octokit to fetch the Gist
     const { data } = await octokit.rest.gists.get({ gist_id: gistId });
+    const gistResponse = data as unknown as GistResponse;
+    
+    // Cache the response
+    setCachedGistContent(gistId, gistResponse);
+    console.log(`Cached content for gist ${gistId}`);
+    
     // Octokit returns the data in a slightly different format, but compatible with GistResponse
-    return data as unknown as GistResponse;
+    return gistResponse;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.status === 404) {
@@ -147,9 +309,11 @@ export const fetchGistContent = async (
 
 /**
  * Fetch markdown content from a URL (typically from a Gist raw URL)
+ * Now supports filename specification via URL fragments and caching
  */
 export const fetchMarkdownContent = async (
-  contentUrl: string
+  contentUrl: string,
+  forceRefresh: boolean = false
 ): Promise<string> => {
   try {
     // Handle data URLs (used for sample/demo content)
@@ -160,11 +324,40 @@ export const fetchMarkdownContent = async (
       );
       return atob(base64Content);
     }
-    const gistId = parseGistUrl(contentUrl);
-    if (!gistId) {
+    
+    const gistInfo = parseGistUrlWithFilename(contentUrl);
+    if (!gistInfo?.gistId) {
       throw new Error("Invalid GitHub Gist URL format");
     }
-    const response = await octokit.rest.gists.get({ gist_id: gistId });
+
+    // Check cache first unless force refresh is requested
+    if (!forceRefresh) {
+      const cachedContent = getCachedGistContent(gistInfo.gistId);
+      if (cachedContent) {
+        console.log(`Using cached content for markdown from gist ${gistInfo.gistId}`);
+        
+        if (cachedContent?.files && Object.keys(cachedContent.files).length > 0) {
+          // If a specific filename was provided in the URL fragment, try to find that file
+          if (gistInfo.filename) {
+            const targetFile = Object.values(cachedContent.files).find(file => 
+              file && file.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
+            );
+            if (targetFile) {
+              return Promise.resolve<string>(targetFile.content || "");
+            }
+            // If specific file not found, log a warning but continue with first file
+            console.warn(`File "${gistInfo.filename}" not found in cached gist, using first available file`);
+          }
+          
+          // Fall back to first file if no specific filename or file not found
+          const content = Object.values(cachedContent.files)[0]?.content;
+          return Promise.resolve<string>(content || "");
+        }
+        return Promise.resolve<string>("");
+      }
+    }
+    
+    const response = await octokit.rest.gists.get({ gist_id: gistInfo.gistId });
 
     if (!response?.data) {
       throw new Error(
@@ -172,7 +365,25 @@ export const fetchMarkdownContent = async (
       );
     }
 
+    // Cache the gist response
+    const gistResponse = response.data as unknown as GistResponse;
+    setCachedGistContent(gistInfo.gistId, gistResponse);
+    console.log(`Cached markdown content for gist ${gistInfo.gistId}`);
+
     if (response?.data?.files && Object.keys(response.data.files).length > 0) {
+      // If a specific filename was provided in the URL fragment, try to find that file
+      if (gistInfo.filename) {
+        const targetFile = Object.values(response.data.files).find(file => 
+          file && file.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
+        );
+        if (targetFile) {
+          return Promise.resolve<string>(targetFile.content || "");
+        }
+        // If specific file not found, log a warning but continue with first file
+        console.warn(`File "${gistInfo.filename}" not found in gist, using first available file`);
+      }
+      
+      // Fall back to first file if no specific filename or file not found
       const content = Object.values(response.data.files)[0]?.content;
       return Promise.resolve<string>(content || "");
     }
@@ -257,13 +468,31 @@ export const parseSlidesFromGist = async (
 };
 
 /**
- * Load presentation data from a gist ID
+ * Load presentation data from a gist ID with caching support
  * This is useful for loading presentations from URL parameters
  */
-export const loadPresentationFromGistId = async (gistId: string): Promise<[Slide[], PresentationMetadata]> => {
+export const loadPresentationFromGistId = async (
+  gistId: string, 
+  forceRefresh: boolean = false
+): Promise<[Slide[], PresentationMetadata]> => {
   try {
+    // Check cache first unless force refresh is requested
+    if (!forceRefresh) {
+      const cachedContent = getCachedGistContent(gistId);
+      if (cachedContent) {
+        console.log(`Using cached presentation data for gist ${gistId}`);
+        return await parseSlidesFromGist(cachedContent);
+      }
+    }
+
     const { data } = await octokit.rest.gists.get({ gist_id: gistId });
-    return await parseSlidesFromGist(data as GistResponse);
+    const gistResponse = data as GistResponse;
+    
+    // Cache the response
+    setCachedGistContent(gistId, gistResponse);
+    console.log(`Cached presentation data for gist ${gistId}`);
+    
+    return await parseSlidesFromGist(gistResponse);
   } catch (error) {
     if (error instanceof Error && 'status' in error && error.status === 404) {
       throw new Error("Gist not found. Please check the Gist ID and make sure it's public.");

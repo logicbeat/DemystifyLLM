@@ -78,8 +78,8 @@ export const configureMarked = () => {
             const tag = token.ordered ? "ol" : "ul";
             const startAttr = token.ordered && token.start !== 1 ? ` start="${token.start}"` : "";
             const classes = token.ordered 
-              ? "list-decimal list-inside space-y-2 my-4 pl-4" 
-              : "list-disc list-inside space-y-2 my-4 pl-4";
+              ? "list-decimal list-outside space-y-1 my-4 ml-6 pl-2" 
+              : "list-disc list-outside space-y-1 my-4 ml-6 pl-2";
             
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const body = token.items.map((item: any) => {

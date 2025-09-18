@@ -25,6 +25,11 @@ export interface PresentationData {
   metadata?: PresentationMetadata;
 }
 
+export interface ParsedGistInfo {
+  gistId: string;
+  filename?: string;
+}
+
 export type ControlBarPosition = 'top' | 'bottom' | 'left' | 'right';
 export type Theme = 'light' | 'dark';
 

@@ -97,8 +97,8 @@ const SlideViewer: React.FC<SlideViewerProps> = ({ slide }) => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors duration-200">
       <div className="max-w-6xl mx-auto">
         {/* Slide Content Area */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 md:p-8 mb-6 transition-all duration-200 hover:shadow-xl">
-          <div className="prose prose-lg max-w-none dark:prose-invert">
+        <div className="flex items-center justify-center bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 md:p-8 mb-6 transition-all duration-200 hover:shadow-xl min-h-[calc(100vh-70px)]">
+          <div className="prose prose-lg max-w-none dark:prose-invert justify-center flex h-full">
             {contentState.isLoading && (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">

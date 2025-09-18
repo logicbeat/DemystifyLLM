@@ -7,7 +7,7 @@ import {
   setLoading,
   setSlidesData,
 } from "../store/slidesSlice";
-import { fetchGistContent, parseSlidesFromGist, parseGistUrl } from "../utils/gistFetcher";
+import { fetchGistContent, parseSlidesFromGist, parseGistUrl, clearGistCache } from "../utils/gistFetcher";
 import { loadSampleData } from "../utils/sampleData";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -44,8 +44,12 @@ const PresentationLoader: React.FC = () => {
           return;
         }
 
-        // Fetch Gist content
-        const gistData = await fetchGistContent(inputUrl.trim());
+        // Clear cache for this gist to force refresh
+        clearGistCache(gistId);
+        console.log(`Cache cleared for gist ${gistId} - forcing refresh`);
+
+        // Fetch Gist content with force refresh
+        const gistData = await fetchGistContent(inputUrl.trim(), true);
 
         // Parse slides from Gist
         const [slidesArray, metadata] = await parseSlidesFromGist(gistData);
