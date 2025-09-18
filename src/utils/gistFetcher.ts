@@ -135,7 +135,7 @@ export const parseGistUrlWithFilename = (url: string): ParsedGistInfo | null => 
 
 /**
  * Parse filename from URL fragment
- * Handles fragments like #file-slide2-md or #file-readme-md
+ * Handles fragments like #file-slide2-md or #file-image-png
  */
 export const parseFilenameFromFragment = (fragment: string): string | null => {
   if (!fragment) return null;
@@ -145,17 +145,48 @@ export const parseFilenameFromFragment = (fragment: string): string | null => {
   
   // GitHub Gist fragments for files follow the pattern: file-{filename-with-dashes}-{extension}
   // Example: #file-slide2-md becomes slide2.md
+  // Example: #file-flo_ppt-template_speakers_update-with-logos-png becomes flo_ppt-template_speakers_update-with-logos.png
   const fileRegex = /^file-(.+)-([a-z0-9]+)$/i;
   const fileMatch = fileRegex.exec(hash);
   if (fileMatch) {
     const [, namePart, extension] = fileMatch;
-    // Replace dashes with dots for the filename, except keep dashes in the base name
-    // Convert file-slide2-md to slide2.md
-    const filename = namePart.replace(/-/g, '') + '.' + extension;
-    return filename;
+    // For most files, replace internal dashes with nothing, but for image files preserve the structure
+    // Check if it's likely an image extension
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'tif'];
+    
+    if (imageExtensions.includes(extension.toLowerCase())) {
+      // For image files, preserve dashes in the filename
+      const filename = namePart.replace(/-/g, '-') + '.' + extension;
+      return filename;
+    } else {
+      // For other files like markdown, remove dashes
+      const filename = namePart.replace(/-/g, '') + '.' + extension;
+      return filename;
+    }
   }
   
   return null;
+};
+
+/**
+ * Check if a filename represents an image file
+ */
+export const isImageFile = (filename: string): boolean => {
+  if (!filename) return false;
+  
+  const imageExtensions = [
+    'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'tif'
+  ];
+  
+  const extension = filename.toLowerCase().split('.').pop();
+  return extension ? imageExtensions.includes(extension) : false;
+};
+
+/**
+ * Get the raw URL for a file in a gist
+ */
+export const getGistFileRawUrl = (gistId: string, filename: string): string => {
+  return `https://gist.githubusercontent.com/${gistId}/raw/${filename}`;
 };
 
 /**
@@ -393,6 +424,164 @@ export const fetchMarkdownContent = async (
       throw error;
     }
     throw new Error("Failed to fetch markdown content");
+  }
+};
+
+/**
+ * Fetch image content from a URL (typically from a Gist raw URL)
+ * Returns image metadata including the raw URL for display
+ */
+export const fetchImageContent = async (
+  contentUrl: string,
+  forceRefresh: boolean = false
+): Promise<{ type: 'image'; url: string; filename?: string }> => {
+  try {
+    const gistInfo = parseGistUrlWithFilename(contentUrl);
+    if (!gistInfo?.gistId) {
+      throw new Error("Invalid GitHub Gist URL format");
+    }
+
+    // Check cache first unless force refresh is requested
+    if (!forceRefresh) {
+      const cachedContent = getCachedGistContent(gistInfo.gistId);
+      if (cachedContent) {
+        console.log(`Using cached content for image from gist ${gistInfo.gistId}`);
+        
+        if (cachedContent?.files && Object.keys(cachedContent.files).length > 0) {
+          // If a specific filename was provided in the URL fragment, try to find that file
+          if (gistInfo.filename) {
+            const targetFile = Object.values(cachedContent.files).find(file => 
+              file && file.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
+            );
+            if (targetFile && targetFile.raw_url) {
+              return { 
+                type: 'image', 
+                url: targetFile.raw_url, 
+                filename: targetFile.filename 
+              };
+            }
+            // If specific file not found, log a warning but continue with first image file
+            console.warn(`File "${gistInfo.filename}" not found in cached gist, looking for first image file`);
+          }
+          
+          // Fall back to first image file if no specific filename or file not found
+          const imageFile = Object.values(cachedContent.files).find(file => 
+            file && file.filename && isImageFile(file.filename)
+          );
+          if (imageFile && imageFile.raw_url) {
+            return { 
+              type: 'image', 
+              url: imageFile.raw_url, 
+              filename: imageFile.filename 
+            };
+          }
+        }
+        throw new Error("No image file found in cached gist");
+      }
+    }
+    
+    const response = await octokit.rest.gists.get({ gist_id: gistInfo.gistId });
+
+    if (!response?.data) {
+      throw new Error(
+        `Failed to fetch image content: ${response?.status} ${response?.status}`
+      );
+    }
+
+    // Cache the gist response
+    const gistResponse = response.data as unknown as GistResponse;
+    setCachedGistContent(gistInfo.gistId, gistResponse);
+    console.log(`Cached image content for gist ${gistInfo.gistId}`);
+
+    if (response?.data?.files && Object.keys(response.data.files).length > 0) {
+      // If a specific filename was provided in the URL fragment, try to find that file
+      if (gistInfo.filename) {
+        const targetFile = Object.values(response.data.files).find(file => 
+          file && file.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
+        );
+        if (targetFile && targetFile.raw_url) {
+          return { 
+            type: 'image', 
+            url: targetFile.raw_url, 
+            filename: targetFile.filename 
+          };
+        }
+        // If specific file not found, log a warning but continue with first image file
+        console.warn(`File "${gistInfo.filename}" not found in gist, looking for first image file`);
+      }
+      
+      // Fall back to first image file if no specific filename or file not found
+      const imageFile = Object.values(response.data.files).find(file => 
+        file && file.filename && isImageFile(file.filename)
+      );
+      if (imageFile && imageFile.raw_url) {
+        return { 
+          type: 'image', 
+          url: imageFile.raw_url, 
+          filename: imageFile.filename 
+        };
+      }
+    }
+    
+    throw new Error("No image file found in gist");
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Failed to fetch image content");
+  }
+};
+
+/**
+ * Determine content type from gist URL and fetch appropriate content
+ * Returns either markdown content (string) or image metadata (object)
+ */
+export const fetchSlideContent = async (
+  contentUrl: string,
+  forceRefresh: boolean = false
+): Promise<string | { type: 'image'; url: string; filename?: string }> => {
+  try {
+    const gistInfo = parseGistUrlWithFilename(contentUrl);
+    if (!gistInfo?.gistId) {
+      throw new Error("Invalid GitHub Gist URL format");
+    }
+
+    // If a specific filename is provided, check if it's an image
+    if (gistInfo.filename && isImageFile(gistInfo.filename)) {
+      return await fetchImageContent(contentUrl, forceRefresh);
+    }
+
+    // Check cache first to determine file type
+    if (!forceRefresh) {
+      const cachedContent = getCachedGistContent(gistInfo.gistId);
+      if (cachedContent?.files) {
+        // If specific filename provided, check its type
+        if (gistInfo.filename) {
+          const targetFile = Object.values(cachedContent.files).find(file => 
+            file && file.filename?.toLowerCase() === gistInfo.filename?.toLowerCase()
+          );
+          if (targetFile?.filename && isImageFile(targetFile.filename)) {
+            return await fetchImageContent(contentUrl, forceRefresh);
+          }
+        } else {
+          // If no specific filename, check if first file is an image
+          const firstFile = Object.values(cachedContent.files)[0];
+          if (firstFile?.filename && isImageFile(firstFile.filename)) {
+            return await fetchImageContent(contentUrl, forceRefresh);
+          }
+        }
+      }
+    }
+
+    // Default to fetching as markdown content
+    return await fetchMarkdownContent(contentUrl, forceRefresh);
+  } catch (error) {
+    // If image fetch fails, try as markdown
+    if (error instanceof Error && error.message.includes("image")) {
+      console.warn("Image fetch failed, trying as markdown:", error.message);
+      return await fetchMarkdownContent(contentUrl, forceRefresh);
+    }
+    throw error;
   }
 };
 

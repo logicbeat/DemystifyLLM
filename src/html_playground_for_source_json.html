@@ -2,69 +2,54 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Presentation JSON Builder – Modern UI</title>
+<title>Presentation JSON Builder – Sync UI</title>
 
 <style>
-  /* ---------- Global ---------- */
-  body{
-    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",Arial,sans-serif;
-    background:#f0f2f5;
-    margin:0;padding:20px;
-  }
-  h1{font-size:1.8rem;margin-bottom:.5rem;color:#333;}
+  body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",Arial,sans-serif;
+       background:#f0f2f5;margin:0;padding:20px;}
+  h1{font-size:1.8rem;color:#333;margin-bottom:.5rem;}
   .container{max-width:960px;margin:auto;display:flex;flex-direction:column;gap:2rem;}
 
-  /* ---------- Cards ---------- */
-  .card{
-    background:#fff;
-    border-radius:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,.05);
-    padding:1.5rem;
-    display:flex;flex-direction:column;gap:.8rem;
-  }
+  /* cards */
+  .card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.05);
+        padding:1.5rem;display:flex;flex-direction:column;gap:.8rem;}
   .card-header{display:flex;justify-content:space-between;align-items:center;}
   .card-title{font-weight:bold;font-size:1.2rem;color:#222;}
 
-  /* ---------- Inputs ---------- */
+  /* inputs */
   label{font-weight:600;font-size:.9rem;color:#555;margin-bottom:.2rem;}
-  input[type="text"],input[type="number"],textarea{
-    width:100%;padding:.6rem 1rem;
-    border:1px solid #d0d4da;border-radius:8px;
-    font-size:.95rem;background:#fafafa;
-  }
+  input[type="text"],input[type="number"],textarea{width:100%;padding:.6rem 1rem;
+        border:1px solid #d0d4da;border-radius:8px;font-size:.95rem;background:#fafafa;}
   textarea{resize:none;height:80px;}
 
-  /* ---------- Buttons ---------- */
-  button{
-    padding:.6rem 1.2rem;
-    border:none;border-radius:8px;
-    font-size:.95rem;cursor:pointer;
-  }
+  /* buttons */
+  button{padding:.6rem 1.2rem;border:none;border-radius:8px;font-size:.95rem;cursor:pointer;}
   button.primary{background:#0066cc;color:white;}
   button.danger{background:#c00;color:white;}
   button.success{background:#28a745;color:white;}
 
-  /* ---------- Slides list ---------- */
+  /* slides */
   .slides-list{display:flex;flex-direction:column;gap:.6rem;}
-  .slide-card{
-    border-left:4px solid #0066cc;
-    padding:.8rem 1.2rem;background:#f9fbff;border-radius:6px;
-    display:flex;flex-direction:column;gap:.4rem;
-  }
+  .slide-card{border-left:4px solid #0066cc;padding:.8rem 1.2rem;background:#f9fbff;border-radius:6px;
+              display:flex;flex-direction:column;gap:.4rem;}
   .slide-header{display:flex;justify-content:space-between;align-items:center;}
 
-  /* ---------- Output ---------- */
-  pre#output{
-    background:#272822;color:#f8f8f2;
-    padding:1rem;border-radius:8px;overflow:auto;font-family:"Fira Code",monospace;
-    white-space:pre-wrap;
-  }
+  /* output */
+  pre#output{background:#272822;color:#f8f8f2;padding:1rem;border-radius:8px;overflow:auto;
+             font-family:"Fira Code",monospace;white-space:pre-wrap;}
 </style>
 </head>
 
 <body>
 <div class="container">
-  <h1>Presentation JSON Builder – Modern UI</h1>
+  <h1>Presentation JSON Builder – Sync UI</h1>
+
+  <!-- Import JSON Card -->
+  <div class="card" id="import-card">
+    <div class="card-header"><span class="card-title">Import JSON</span></div>
+    <textarea id="import-json" placeholder='Paste PresentationData JSON here…' rows="6"></textarea>
+    <button class="primary" onclick="syncToUI()">Sync UI</button>
+  </div>
 
   <!-- Metadata Card -->
   <div class="card" id="metadata-card">
@@ -92,7 +77,7 @@
 </div>
 
 <script>
-/* ---------- Utility ---------- */
+/* ---------- Utility functions ---------- */
 function createInput(type, placeholder='', value='') {
   const inp = document.createElement('input');
   inp.type = type;
@@ -107,18 +92,18 @@ function createTextarea(placeholder='', value='') {
   return ta;
 }
 
-/* ---------- Slide Management ---------- */
-function addSlide(index=null) {
+/* ---------- Slide management ---------- */
+function addSlide(index=null, content='', urls=[]) {
   const container = document.getElementById('slides-list');
 
   const slideCard = document.createElement('div');
   slideCard.className='slide-card';
 
-  // Header: index + remove button
+  // Header: index + remove
   const header = document.createElement('div');
   header.className='slide-header';
   const idxLabel = document.createElement('label');
-  idxLabel.textContent = 'Index: ';
+  idxLabel.textContent='Index: ';
   const idxInput = createInput('number', '0', index ?? '');
   idxLabel.appendChild(idxInput);
   header.appendChild(idxLabel);
@@ -134,18 +119,49 @@ function addSlide(index=null) {
   // Content gist
   const contentLabel = document.createElement('label');
   contentLabel.textContent='Slide Content Gist';
-  const contentInput = createTextarea('e.g. “Overview of the project”', '');
+  const contentInput = createTextarea('e.g. “Overview of the project”', content);
   slideCard.appendChild(contentLabel);
   slideCard.appendChild(contentInput);
 
   // Lab URLs
   const urlLabel = document.createElement('label');
   urlLabel.textContent='Lab URL(s) (comma separated)';
-  const urlInput = createTextarea('https://lab.com', '');
+  const urlInput = createTextarea('https://lab.com', urls.join(', '));
   slideCard.appendChild(urlLabel);
   slideCard.appendChild(urlInput);
 
   container.appendChild(slideCard);
+}
+
+/* ---------- Sync UI from JSON ---------- */
+function syncToUI() {
+  const jsonText = document.getElementById('import-json').value.trim();
+  if (!jsonText) { alert('Paste a JSON string first.'); return; }
+  let data;
+  try {
+    data = JSON.parse(jsonText);
+  } catch (e) { alert('Invalid JSON.'); return; }
+
+  // Clear existing slides
+  document.getElementById('slides-list').innerHTML = '';
+
+  /* ---------- Metadata ---------- */
+  const meta = data.metadata || {};
+  document.getElementById('title').value   = meta.title ?? '';
+  document.getElementById('author').value  = meta.author ?? '';
+  document.getElementById('description').value = meta.description ?? '';
+
+  /* ---------- Slides ---------- */
+  if (Array.isArray(data.slides)) {
+    data.slides.forEach(slide => {
+      const urls = slide.slideLabUrl
+        ? Array.isArray(slide.slideLabUrl)
+          ? slide.slideLabUrl
+          : [slide.slideLabUrl]
+        : [];
+      addSlide(slide.slideIndex, slide.slideContentGist, urls);
+    });
+  }
 }
 
 /* ---------- Generate JSON ---------- */
@@ -155,7 +171,7 @@ function generate() {
     const idx = parseInt(card.querySelector('input[type=number]').value,10);
     const content = card.querySelectorAll('textarea')[0].value.trim();
     let urls = card.querySelectorAll('textarea')[1].value.split(',')
-                  .map(u=>u.trim()).filter(Boolean);
+                .map(u=>u.trim()).filter(Boolean);
     if (urls.length===0) urls=undefined;
     else if (urls.length===1) urls=urls[0];
     slides.push({

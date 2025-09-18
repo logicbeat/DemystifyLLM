@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAppSelector } from "../app/hooks";
 import "../styles/prism-github.css";
 import type { Slide } from "../types";
-import { fetchMarkdownContent } from "../utils/gistFetcher";
+import { fetchSlideContent } from "../utils/gistFetcher";
 import { marked } from "../utils/markdownConfig";
 import { extractTitle, processSlideMarkdown } from "../utils/markdownRenderer";
 
@@ -11,7 +11,7 @@ interface SlideViewerProps {
 }
 
 interface SlideContentState {
-  content: string | null;
+  content: string | { type: 'image'; url: string; filename?: string } | null;
   isLoading: boolean;
   error: string | null;
   title: string | null;
@@ -40,24 +40,35 @@ const SlideViewer: React.FC<SlideViewerProps> = ({ slide }) => {
       }));
 
       try {
-        const markdownContent = await fetchMarkdownContent(
+        const slideContent = await fetchSlideContent(
           currentSlide.slideContentGist
         );
 
-        if (!markdownContent) {
+        if (!slideContent) {
           throw new Error("No content received from the server");
         }
 
-        // Process the markdown and extract metadata
-        const processedContent = processSlideMarkdown(markdownContent);
-        const extractedTitle = extractTitle(markdownContent);
+        // Handle different content types
+        if (typeof slideContent === 'string') {
+          // Markdown content
+          const processedContent = processSlideMarkdown(slideContent);
+          const extractedTitle = extractTitle(slideContent);
 
-        setContentState({
-          content: processedContent,
-          isLoading: false,
-          error: null,
-          title: extractedTitle,
-        });
+          setContentState({
+            content: processedContent,
+            isLoading: false,
+            error: null,
+            title: extractedTitle,
+          });
+        } else {
+          // Image content
+          setContentState({
+            content: slideContent,
+            isLoading: false,
+            error: null,
+            title: slideContent.filename || 'Image Slide',
+          });
+        }
       } catch (error) {
         const errorMessage =
           error instanceof Error
@@ -94,10 +105,10 @@ const SlideViewer: React.FC<SlideViewerProps> = ({ slide }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors duration-200">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-3 transition-colors duration-200">
       <div className="max-w-6xl mx-auto">
         {/* Slide Content Area */}
-        <div className="flex items-center justify-center bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 md:p-8 mb-6 transition-all duration-200 hover:shadow-xl min-h-[calc(100vh-70px)]">
+        <div className="flex items-center justify-center bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 md:p-5 mb-6 transition-all duration-200 hover:shadow-xl min-h-[calc(100vh-70px)]">
           <div className="prose prose-lg max-w-none dark:prose-invert justify-center flex h-full">
             {contentState.isLoading && (
               <div className="flex items-center justify-center py-12">
@@ -139,12 +150,35 @@ const SlideViewer: React.FC<SlideViewerProps> = ({ slide }) => {
             {contentState.content &&
               !contentState.isLoading &&
               !contentState.error && (
-                <div
-                  className="markdown-content animate-fade-in prose prose-lg max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: marked.parse(contentState.content),
-                  }}
-                />
+                <div className="markdown-content animate-fade-in prose prose-lg max-w-none dark:prose-invert">
+                  {typeof contentState.content === 'string' ? (
+                    // Render markdown content
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: marked.parse(contentState.content),
+                      }}
+                    />
+                  ) : (
+                    // Render image content
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <img 
+                        src={contentState.content.url}
+                        alt={contentState.content.filename || 'Slide image'}
+                        className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                        style={{ maxHeight: 'calc(100vh - 200px)' }}
+                        onError={(e) => {
+                          console.error('Failed to load image:', contentState.content);
+                          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY3NzI4MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pjwvc3ZnPg==';
+                        }}
+                      />
+                      {contentState.content.filename && (
+                        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
+                          {contentState.content.filename}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
           </div>
         </div>
