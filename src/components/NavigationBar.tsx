@@ -24,6 +24,14 @@ interface NavigationBarProps {
   onLabsOpen?: () => void;
 }
 
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: 'smooth'
+  });
+}
+
 const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen, onLabsOpen }) => {
   const dispatch = useAppDispatch();
   const { slides, currentSlideIndex, gistId } = useAppSelector(
@@ -47,6 +55,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen, onLabsOpe
   const handlePrevious = () => {
     if (!isFirstSlide) {
       dispatch(previousSlide());
+      scrollToTop();
     } else if (wrapNavigation && totalSlides > 0) {
       dispatch(lastSlide());
     }
@@ -55,6 +64,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen, onLabsOpe
   const handleNext = () => {
     if (!isLastSlide) {
       dispatch(nextSlide());
+      scrollToTop();
     } else if (wrapNavigation && totalSlides > 0) {
       dispatch(firstSlide());
     }
@@ -62,6 +72,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ onSettingsOpen, onLabsOpe
 
   const handleSlideSelect = (slideIndex: number) => {
     dispatch(setCurrentSlide(slideIndex));
+    scrollToTop();
   };
 
   const handleShare = async () => {

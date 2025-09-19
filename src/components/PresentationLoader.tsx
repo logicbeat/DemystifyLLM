@@ -2,13 +2,12 @@ import React, { useCallback, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
   setError,
-  setGistUrl,
   setGistId,
+  setGistUrl,
   setLoading,
   setSlidesData,
 } from "../store/slidesSlice";
-import { fetchGistContent, parseSlidesFromGist, parseGistUrl, clearGistCache } from "../utils/gistFetcher";
-import { loadSampleData } from "../utils/sampleData";
+import { clearGistCache, fetchGistContent, parseGistUrl, parseSlidesFromGist } from "../utils/gistFetcher";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -81,20 +80,20 @@ const PresentationLoader: React.FC = () => {
     [inputUrl, dispatch]
   );
 
-  // Memoize handleLoadDemo to prevent unnecessary re-creations
-  const handleLoadDemo = useCallback(async () => {
-    dispatch(setLoading(true));
-    try {
-      const sampleData = await loadSampleData();
-      dispatch(setSlidesData(sampleData));
-      dispatch(setGistUrl("demo://sample-presentation"));
-      dispatch(setGistId("demo"));
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to load demo data";
-      dispatch(setError(errorMessage));
-    }
-  }, [dispatch]);
+  // // Memoize handleLoadDemo to prevent unnecessary re-creations
+  // const handleLoadDemo = useCallback(async () => {
+  //   dispatch(setLoading(true));
+  //   try {
+  //     const sampleData = await loadSampleData();
+  //     dispatch(setSlidesData(sampleData));
+  //     dispatch(setGistUrl("demo://sample-presentation"));
+  //     dispatch(setGistId("demo"));
+  //   } catch (error) {
+  //     const errorMessage =
+  //       error instanceof Error ? error.message : "Failed to load demo data";
+  //     dispatch(setError(errorMessage));
+  //   }
+  // }, [dispatch]);
 
   // Memoize inputUrl change handler
   const handleInputChange = useCallback(
@@ -160,14 +159,14 @@ const PresentationLoader: React.FC = () => {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
           </div>
-          <div className="relative flex justify-center text-sm">
+          {/* <div className="relative flex justify-center text-sm">
             <span className="px-4 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">
               or
             </span>
-          </div>
+          </div> */}
         </div>
 
-        <div className="text-center">
+        {/* <div className="text-center">
           <Button
             type="button"
             onClick={handleLoadDemo}
@@ -180,7 +179,7 @@ const PresentationLoader: React.FC = () => {
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
             Experience the full feature set including iframe labs
           </p>
-        </div>
+        </div> */}
       </form>
 
       {/* Enhanced Error Display */}
